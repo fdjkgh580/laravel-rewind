@@ -19,6 +19,8 @@ use Illuminate\Support\Facades\Auth;
  */
 trait Rewindable
 {
+    public bool $disableRewindEvents = false;
+
     /**
      * Boot the trait. Registers relevant event listeners.
      */
