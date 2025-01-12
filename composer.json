@@ -35,13 +35,13 @@
     },
     "autoload": {
         "psr-4": {
-            "Avocet Shores\\LaravelRewind\\": "src/",
-            "Avocet Shores\\LaravelRewind\\Database\\Factories\\": "database/factories/"
+            "AvocetShores\\LaravelRewind\\": "src/",
+            "AvocetShores\\LaravelRewind\\Database\\Factories\\": "database/factories/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "Avocet Shores\\LaravelRewind\\Tests\\": "tests/",
+            "AvocetShores\\LaravelRewind\\Tests\\": "tests/",
             "Workbench\\App\\": "workbench/app/"
         }
     },
@@ -63,10 +63,10 @@
     "extra": {
         "laravel": {
             "providers": [
-                "Avocet Shores\\LaravelRewind\\LaravelRewindServiceProvider"
+                "AvocetShores\\LaravelRewind\\LaravelRewindServiceProvider"
             ],
             "aliases": {
-                "LaravelRewind": "Avocet Shores\\LaravelRewind\\Facades\\LaravelRewind"
+                "LaravelRewind": "AvocetShores\\LaravelRewind\\Facades\\LaravelRewind"
             }
         }
     },

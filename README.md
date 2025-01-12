@@ -52,7 +52,7 @@ php artisan vendor:publish --tag="laravel-rewind-views"
 ## Usage
 
 ```php
-$laravelRewind = new Avocet Shores\LaravelRewind();
+$laravelRewind = new AvocetShores\LaravelRewind();
 echo $laravelRewind->echoPhrase('Hello, Avocet Shores!');
 ```
 

@@ -1,6 +1,6 @@
 <?php
 
-namespace Avocet Shores\LaravelRewind\Database\Factories;
+namespace AvocetShores\LaravelRewind\Database\Factories;
 
 use Illuminate\Database\Eloquent\Factories\Factory;
 

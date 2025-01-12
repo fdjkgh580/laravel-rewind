@@ -1,5 +1,5 @@
 <?php
 
-namespace Avocet Shores\LaravelRewind;
+namespace AvocetShores\LaravelRewind;
 
 class LaravelRewind {}

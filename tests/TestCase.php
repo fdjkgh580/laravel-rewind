@@ -1,10 +1,10 @@
 <?php
 
-namespace Avocet Shores\LaravelRewind\Tests;
+namespace AvocetShores\LaravelRewind\Tests;
 
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Orchestra\Testbench\TestCase as Orchestra;
-use Avocet Shores\LaravelRewind\LaravelRewindServiceProvider;
+use AvocetShores\LaravelRewind\LaravelRewindServiceProvider;
 
 class TestCase extends Orchestra
 {
@@ -13,7 +13,7 @@ class TestCase extends Orchestra
         parent::setUp();
 
         Factory::guessFactoryNamesUsing(
-            fn (string $modelName) => 'Avocet Shores\\LaravelRewind\\Database\\Factories\\'.class_basename($modelName).'Factory'
+            fn (string $modelName) => 'AvocetShores\\LaravelRewind\\Database\\Factories\\'.class_basename($modelName).'Factory'
         );
     }
 

@@ -1,6 +1,6 @@
 <?php
 
-namespace Avocet Shores\LaravelRewind\Commands;
+namespace AvocetShores\LaravelRewind\Commands;
 
 use Illuminate\Console\Command;
 

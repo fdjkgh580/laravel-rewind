@@ -1,10 +1,10 @@
 <?php
 
-namespace Avocet Shores\LaravelRewind;
+namespace AvocetShores\LaravelRewind;
 
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
-use Avocet Shores\LaravelRewind\Commands\LaravelRewindCommand;
+use AvocetShores\LaravelRewind\Commands\LaravelRewindCommand;
 
 class LaravelRewindServiceProvider extends PackageServiceProvider
 {
