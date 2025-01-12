@@ -7,110 +7,120 @@ use AvocetShores\LaravelRewind\LaravelRewindServiceProvider;
 use AvocetShores\LaravelRewind\Traits\Rewindable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class RewindManager
 {
     /**
-     * Undo the most recent change by jumping to the version before the current one.
+     * Undo the most recent change by jumping from current_version
+     * to the previous version, if any.
      *
-     * @param Model $model
-     * @return bool  True if successfully reverted; False otherwise.
      * @throws LaravelRewindException
      */
     public function undo(Model $model): bool
     {
-        // First, make sure the model implements the Rewindable trait.
         $this->assertRewindable($model);
 
-        // Find the current (highest) version for this model.
-        $currentRevision = $model->revisions()->orderBy('version', 'desc')->first();
+        // Identify the model's actual current version
+        $currentVersion = $this->determineCurrentVersion($model);
 
-        // If there's no revision or if we're at version 1, there's nothing to undo.
-        if (! $currentRevision || $currentRevision->version <= 1) {
+        if ($currentVersion <= 1) {
+            // If the model is at version 0 or 1, there’s nothing to undo back to
             return false;
         }
 
-        // Next, find the revision representing the state just before the current version.
+        // Find the previous version
         $previousRevision = $model->revisions()
-            ->where('version', '<', $currentRevision->version)
+            ->where('version', '<', $currentVersion)
             ->orderBy('version', 'desc')
             ->first();
 
-        // If somehow there's no previous revision, abort.
         if (! $previousRevision) {
             return false;
         }
 
-        // Revert to previous revision
-        return $this->applyRevision($model, $previousRevision->version);
+        // Apply the revision for the previous version
+        $successful = $this->applyRevision($model, $previousRevision->version);
+
+        if ($successful && $this->modelHasCurrentVersionColumn($model)) {
+            // Update the model’s current_version only if the column exists
+            $model->current_version = $previousRevision->version;
+            $model->save();
+        }
+
+        return $successful;
     }
 
     /**
-     * Redo the next revision if we have undone one.
+     * Fast-forward (redo) to the next version, if one exists.
      *
-     * @param Model $model
-     * @return bool
      * @throws LaravelRewindException
      */
     public function redo(Model $model): bool
     {
-        // First, make sure the model implements the Rewindable trait.
         $this->assertRewindable($model);
 
-        // Identify the current version by comparing the model’s actual data
-        // with the highest revision’s data. In a simple approach, assume
-        // the "current" version is the highest.
+        // Identify the model's actual current version
         $currentVersion = $this->determineCurrentVersion($model);
 
-        // Find the next revision after the current version.
+        // Find the next higher version
         $nextRevision = $model->revisions()
             ->where('version', '>', $currentVersion)
             ->orderBy('version', 'asc')
             ->first();
 
-        // If none, there’s no “redo” to perform.
         if (! $nextRevision) {
             return false;
         }
 
-        return $this->applyRevision($model, $nextRevision->version);
+        // Apply the next revision
+        $successful = $this->applyRevision($model, $nextRevision->version);
+
+        if ($successful && $this->modelHasCurrentVersionColumn($model)) {
+            // Update current_version only if present
+            $model->current_version = $nextRevision->version;
+            $model->save();
+        }
+
+        return $successful;
     }
 
     /**
      * Jump directly to a specified version.
      *
-     * @param Model $model
-     * @param int $version
-     * @return bool
      * @throws LaravelRewindException
      */
-    public function revertToVersion(Model $model, int $version): bool
+    public function goToVersion(Model $model, int $version): bool
     {
-        // First, make sure the model implements the Rewindable trait.
         $this->assertRewindable($model);
 
-        // Validate that the version exists:
+        // Validate the target version
         $revision = $model->revisions()->where('version', $version)->first();
-
         if (! $revision) {
             return false;
         }
 
-        return $this->applyRevision($model, $version);
+        // Apply the revision
+        $successful = $this->applyRevision($model, $version);
+
+        if ($successful && $this->modelHasCurrentVersionColumn($model)) {
+            // Update current_version if it exists on this model
+            $model->current_version = $version;
+            $model->save();
+        }
+
+        return $successful;
     }
 
     /**
      * Core function to apply the state of a revision to the model.
      * Optionally create a new revision if config or the model says so.
      *
-     * @param \Illuminate\Database\Eloquent\Model $model
-     * @param int $targetVersion
-     * @return bool
      * @throws LaravelRewindException
      */
     protected function applyRevision(Model $model, int $targetVersion): bool
     {
-        // First, make sure the model implements the Rewindable trait.
+        // First, make sure the model implements the Rewindable trait
         $this->assertRewindable($model);
 
         $revisionToApply = $model->revisions()->where('version', $targetVersion)->first();
@@ -122,19 +132,14 @@ class RewindManager
         $attributes = $revisionToApply->new_values ?: [];
 
         // Determine if we want to log a new revision for this revert/redo action
-        $shouldRecordRewind = config('laravel-rewind.record_rewinds', false) ||
-            (
-                method_exists($model, 'shouldRecordRewinds') &&
-                $model->shouldRecordRewinds()
-            );
+        $shouldRecordRewind = config('laravel-rewind.record_rewinds', false)
+            || (method_exists($model, 'shouldRecordRewinds') && $model->shouldRecordRewinds());
 
-        // Before we apply the revert, capture the model's current state
-        // so we can store it as old_values if we decide to create a revision.
+        // Capture the model's current state so we can store it as old_values if we create a revision
         $previousModelState = $model->attributesToArray();
 
         DB::transaction(function () use ($model, $attributes, $shouldRecordRewind, $previousModelState) {
-
-            // Temporarily tell the Rewindable trait to skip storing a new revision on this revert/redo update.
+            // Temporarily disable normal Rewindable event handling
             $model->disableRewindEvents = true;
 
             // Update the model’s attributes to the "target" revision state
@@ -146,15 +151,9 @@ class RewindManager
             // Re-enable normal event handling
             $model->disableRewindEvents = false;
 
-            // If desired, create a brand-new revision to record that
-            // we changed the model's state.
-            //    - old_values = the state of the model before rewind
-            //    - new_values = the state we just applied
+            // If desired, create a new revision capturing the revert/redo event
             if ($shouldRecordRewind) {
-                // Retrieve the configured revision model
                 $rewindModelClass = LaravelRewindServiceProvider::determineRewindRevisionModel();
-
-                // The next version in sequence
                 $nextVersion = ($model->revisions()->max('version') ?? 0) + 1;
 
                 $rewindModelClass::create([
@@ -163,7 +162,6 @@ class RewindManager
                     'old_values' => $previousModelState,
                     'new_values' => $attributes,
                     'version'    => $nextVersion,
-
                     config('laravel-rewind.user_id_column') => $model->getTrackUser(),
                 ]);
             }
@@ -173,17 +171,20 @@ class RewindManager
     }
 
     /**
-     * Determine the model’s current version number in a simple manner.
-     * We assume the highest revision in the table is the correct "current" state.
-     * TODO : Update this
+     * Determine the model's current version.
      *
-     * @param Model $model
-     * @return int
+     * If a current_version column exists, return it.
+     * Otherwise, fallback to the highest version from the revisions table (a best guess).
      */
     protected function determineCurrentVersion(Model $model): int
     {
-        $latest = $model->revisions()->orderBy('version', 'desc')->first();
-        return $latest ? $latest->version : 0;
+        if ($this->modelHasCurrentVersionColumn($model)) {
+            // Use the stored current_version, defaulting to 0
+            return $model->current_version ?? 0;
+        }
+
+        // If there's no current_version column, fallback to the highest known revision
+        return $model->revisions()->max('version') ?? 0;
     }
 
     /**
@@ -197,4 +198,14 @@ class RewindManager
             throw new LaravelRewindException('Model must use the Rewindable trait to be rewound.');
         }
     }
+
+    /**
+     * Check if the model's table has a 'current_version' column.
+     */
+    protected function modelHasCurrentVersionColumn(Model $model): bool
+    {
+        return Schema::connection($model->getConnectionName())
+            ->hasColumn($model->getTable(), 'current_version');
+    }
 }
+
