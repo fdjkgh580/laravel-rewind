@@ -40,15 +40,7 @@ class RewindManager
         }
 
         // Apply the revision for the previous version
-        $successful = $this->applyRevision($model, $previousRevision->version);
-
-        if ($successful && $this->modelHasCurrentVersionColumn($model)) {
-            // Update the model’s current_version only if the column exists
-            $model->current_version = $previousRevision->version;
-            $model->save();
-        }
-
-        return $successful;
+        return $this->applyRevision($model, $previousRevision->version);
     }
 
     /**
@@ -74,15 +66,7 @@ class RewindManager
         }
 
         // Apply the next revision
-        $successful = $this->applyRevision($model, $nextRevision->version);
-
-        if ($successful && $this->modelHasCurrentVersionColumn($model)) {
-            // Update current_version only if present
-            $model->current_version = $nextRevision->version;
-            $model->save();
-        }
-
-        return $successful;
+        return $this->applyRevision($model, $nextRevision->version);
     }
 
     /**
@@ -101,15 +85,7 @@ class RewindManager
         }
 
         // Apply the revision
-        $successful = $this->applyRevision($model, $version);
-
-        if ($successful && $this->modelHasCurrentVersionColumn($model)) {
-            // Update current_version if it exists on this model
-            $model->current_version = $version;
-            $model->save();
-        }
-
-        return $successful;
+        return $this->applyRevision($model, $version);
     }
 
     /**
@@ -138,7 +114,7 @@ class RewindManager
         // Capture the model's current state so we can store it as old_values if we create a revision
         $previousModelState = $model->attributesToArray();
 
-        DB::transaction(function () use ($model, $attributes, $shouldRecordRewind, $previousModelState) {
+        DB::transaction(function () use ($model, $attributes, $shouldRecordRewind, $previousModelState, $revisionToApply) {
             // Temporarily disable normal Rewindable event handling
             $model->disableRewindEvents = true;
 
@@ -146,6 +122,12 @@ class RewindManager
             foreach ($attributes as $key => $value) {
                 $model->setAttribute($key, $value);
             }
+
+            // Save the new current_version if the model has the column
+            if ($this->modelHasCurrentVersionColumn($model)) {
+                $model->current_version = $revisionToApply->version;
+            }
+
             $model->save();
 
             // Re-enable normal event handling
@@ -164,6 +146,16 @@ class RewindManager
                     'version' => $nextVersion,
                     config('laravel-rewind.user_id_column') => $model->getTrackUser(),
                 ]);
+
+                // Update the current_version column if it exists
+                if ($this->modelHasCurrentVersionColumn($model)) {
+                    $model->disableRewindEvents = true;
+
+                    $model->current_version = $nextVersion;
+                    $model->save();
+
+                    $model->disableRewindEvents = false;
+                }
             }
         });
 
