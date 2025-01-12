@@ -1,17 +1,17 @@
 {
-    "name": ":vendor_slug/:package_slug",
-    "description": ":package_description",
+    "name": "avocet-shores/laravel-rewind",
+    "description": "Laravel Rewind is a simple, opinionated package that provides versioning, “undo,” and “redo” functionality for your Eloquent models",
     "keywords": [
-        ":vendor_name",
+        "Avocet Shores",
         "laravel",
-        ":package_slug"
+        "laravel-rewind"
     ],
-    "homepage": "https://github.com/:vendor_slug/:package_slug",
+    "homepage": "https://github.com/avocet-shores/laravel-rewind",
     "license": "MIT",
     "authors": [
         {
-            "name": ":author_name",
-            "email": "author@domain.com",
+            "name": "jared.cannon",
+            "email": "jaredcannon9@gmail.com",
             "role": "Developer"
         }
     ],
@@ -35,13 +35,13 @@
     },
     "autoload": {
         "psr-4": {
-            "VendorName\\Skeleton\\": "src/",
-            "VendorName\\Skeleton\\Database\\Factories\\": "database/factories/"
+            "Avocet Shores\\LaravelRewind\\": "src/",
+            "Avocet Shores\\LaravelRewind\\Database\\Factories\\": "database/factories/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "VendorName\\Skeleton\\Tests\\": "tests/",
+            "Avocet Shores\\LaravelRewind\\Tests\\": "tests/",
             "Workbench\\App\\": "workbench/app/"
         }
     },
@@ -63,10 +63,10 @@
     "extra": {
         "laravel": {
             "providers": [
-                "VendorName\\Skeleton\\SkeletonServiceProvider"
+                "Avocet Shores\\LaravelRewind\\LaravelRewindServiceProvider"
             ],
             "aliases": {
-                "Skeleton": "VendorName\\Skeleton\\Facades\\Skeleton"
+                "LaravelRewind": "Avocet Shores\\LaravelRewind\\Facades\\LaravelRewind"
             }
         }
     },

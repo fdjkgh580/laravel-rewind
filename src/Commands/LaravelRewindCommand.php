@@ -1,12 +1,12 @@
 <?php
 
-namespace VendorName\Skeleton\Commands;
+namespace Avocet Shores\LaravelRewind\Commands;
 
 use Illuminate\Console\Command;
 
-class SkeletonCommand extends Command
+class LaravelRewindCommand extends Command
 {
-    public $signature = 'skeleton';
+    public $signature = 'laravel-rewind';
 
     public $description = 'My command';
 
