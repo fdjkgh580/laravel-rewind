@@ -2,9 +2,9 @@
 
 namespace AvocetShores\LaravelRewind\Tests;
 
+use AvocetShores\LaravelRewind\LaravelRewindServiceProvider;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Orchestra\Testbench\TestCase as Orchestra;
-use AvocetShores\LaravelRewind\LaravelRewindServiceProvider;
 
 class TestCase extends Orchestra
 {
