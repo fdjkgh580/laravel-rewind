@@ -8,16 +8,19 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class RewindRevision extends Model
 {
     /**
-     * Dynamically set the table name from config in the constructor.
-     *
      * @param  array  $attributes
      */
     public function __construct(array $attributes = [])
     {
-        $this->table = config('laravel-rewind.table_name');
+        if (! isset($this->connection)) {
+            $this->setConnection(config('laravel-rewind.database_connection'));
+        }
+
+        if (! isset($this->table)) {
+            $this->setTable(config('laravel-rewind.table_name'));
+        }
 
         $this->fillable[] = config('laravel-rewind.user_id_column');
-
         $this->casts[config('laravel-rewind.user_id_column')] = 'integer';
 
         parent::__construct($attributes);

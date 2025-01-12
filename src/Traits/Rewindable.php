@@ -2,6 +2,8 @@
 
 namespace AvocetShores\LaravelRewind\Traits;
 
+use AvocetShores\LaravelRewind\Exceptions\InvalidConfigurationException;
+use AvocetShores\LaravelRewind\LaravelRewindServiceProvider;
 use AvocetShores\LaravelRewind\Models\RewindRevision;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -25,14 +27,17 @@ trait Rewindable
     public static function bootRewindable(): void
     {
         static::saved(function ($model) {
-            // For newly created or updated model
+            // If the model signals it does not want Rewindable events, skip
+            if (! empty($model->disableRewindEvents)) {
+                return;
+            }
             $model->recordRevision();
         });
 
         static::deleted(function ($model) {
-            // For a soft-deleted or permanently deleted model
-            // This could track that the model was removed,
-            // but you can customize if you only want to track changes to "active" records.
+            if (! empty($model->disableRewindEvents)) {
+                return;
+            }
             $model->recordRevision();
         });
     }
@@ -52,6 +57,7 @@ trait Rewindable
      * Capture the difference between old and new values, and store them in the database.
      *
      * @return void
+     * @throws InvalidConfigurationException
      */
     protected function recordRevision(): void
     {
@@ -95,11 +101,7 @@ trait Rewindable
         $nextVersion = ($this->revisions()->max('version') ?? 0) + 1;
 
         // Create the revision record using the configured model.
-        $modelClass = config('laravel-rewind.rewind_model');
-
-        if (! class_exists($modelClass)) {
-            throw new \RuntimeException('The RewindRevision model class does not exist.');
-        }
+        $modelClass = LaravelRewindServiceProvider::determineRewindRevisionModel();
 
         // Create a new revision record
         $modelClass::create([
