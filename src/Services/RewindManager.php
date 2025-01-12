@@ -13,8 +13,8 @@ class RewindManager
     /**
      * Undo the most recent change by jumping to the version before the current one.
      *
-     * @param Model $model
-     * @return bool  True if successfully reverted; False otherwise.
+     * @return bool True if successfully reverted; False otherwise.
+     *
      * @throws LaravelRewindException
      */
     public function undo(Model $model): bool
@@ -48,8 +48,6 @@ class RewindManager
     /**
      * Redo the next revision if we have undone one.
      *
-     * @param Model $model
-     * @return bool
      * @throws LaravelRewindException
      */
     public function redo(Model $model): bool
@@ -79,9 +77,6 @@ class RewindManager
     /**
      * Jump directly to a specified version.
      *
-     * @param Model $model
-     * @param int $version
-     * @return bool
      * @throws LaravelRewindException
      */
     public function revertToVersion(Model $model, int $version): bool
@@ -103,9 +98,6 @@ class RewindManager
      * Core function to apply the state of a revision to the model.
      * Optionally create a new revision if config or the model says so.
      *
-     * @param \Illuminate\Database\Eloquent\Model $model
-     * @param int $targetVersion
-     * @return bool
      * @throws LaravelRewindException
      */
     protected function applyRevision(Model $model, int $targetVersion): bool
@@ -159,10 +151,10 @@ class RewindManager
 
                 $rewindModelClass::create([
                     'model_type' => get_class($model),
-                    'model_id'   => $model->getKey(),
+                    'model_id' => $model->getKey(),
                     'old_values' => $previousModelState,
                     'new_values' => $attributes,
-                    'version'    => $nextVersion,
+                    'version' => $nextVersion,
 
                     config('laravel-rewind.user_id_column') => $model->getTrackUser(),
                 ]);
@@ -176,13 +168,11 @@ class RewindManager
      * Determine the model’s current version number in a simple manner.
      * We assume the highest revision in the table is the correct "current" state.
      * TODO : Update this
-     *
-     * @param Model $model
-     * @return int
      */
     protected function determineCurrentVersion(Model $model): int
     {
         $latest = $model->revisions()->orderBy('version', 'desc')->first();
+
         return $latest ? $latest->version : 0;
     }
 
