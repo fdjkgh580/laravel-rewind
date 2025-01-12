@@ -176,3 +176,40 @@ it('throws an exception when jumping to a version that does not exist', function
     // Act: Jump to version 2
     Rewind::goToVersion($post, 2);
 })->throws(VersionDoesNotExistException::class);
+
+it('creates a new version when running undo if record_rewinds is enabled', function () {
+    app()->config->set('rewind.record_rewinds', true);
+
+    // Arrange
+    $post = Post::create([
+        'user_id' => $this->user->id,
+        'title' => 'Original Title',
+        'body' => 'Original Body',
+    ]);
+
+    $post->refresh();
+
+    // Assert the model has current_version set to 1
+    $this->assertSame(1, $post->current_version);
+
+    $post->update([
+        'title' => 'Updated Title',
+        'body' => 'Updated Body',
+    ]);
+
+    $this->assertSame(2, $post->current_version);
+
+    // Act: Undo the last version
+    Rewind::undo($post);
+
+    // Assert: The model should be reverted to the previous version
+    $this->assertSame(1, $post->current_version);
+    $this->assertSame('Original Title', $post->title);
+    $this->assertSame('Original Body', $post->body);
+
+    // Assert: A new version should be created
+    $this->assertSame(3, $post->versions()->max('version'));
+
+    // Assert all versions are attributed to the user
+    $this->assertSame(3, $post->versions()->where('user_id', $this->user->id)->count());
+});

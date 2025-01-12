@@ -107,7 +107,7 @@ trait Rewindable
             'old_values' => $oldValues ?: null,
             'new_values' => $newValues ?: null,
             'version' => $nextVersion,
-            config('laravel-rewind.user_id_column') => $this->getTrackUser(),
+            config('rewind.user_id_column') => $this->getRewindTrackUser(),
         ]);
 
         // Update the current_version column if it exists
@@ -160,9 +160,9 @@ trait Rewindable
      *
      * @return int|string|null
      */
-    protected function getTrackUser()
+    public function getRewindTrackUser()
     {
-        if (! config('laravel-rewind.track_user')) {
+        if (! config('rewind.track_user')) {
             return null;
         }
 

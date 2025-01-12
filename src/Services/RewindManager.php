@@ -109,7 +109,7 @@ class RewindManager
         $attributes = $versionToApply->new_values ?: [];
 
         // Determine if we want to log a new version for this revert/redo action
-        $shouldRecordRewind = config('laravel-rewind.record_rewinds', false)
+        $shouldRecordRewind = config('rewind.record_rewinds', false)
             || (method_exists($model, 'shouldRecordRewinds') && $model->shouldRecordRewinds());
 
         // Capture the model's current state so we can store it as old_values if we create a version
@@ -145,18 +145,10 @@ class RewindManager
                     'old_values' => $previousModelState,
                     'new_values' => $attributes,
                     'version' => $nextVersion,
-                    config('laravel-rewind.user_id_column') => $model->getTrackUser(),
+                    config('rewind.user_id_column') => $model->getRewindTrackUser(),
                 ]);
 
-                // Update the current_version column if it exists
-                if ($this->modelHasCurrentVersionColumn($model)) {
-                    $model->disableRewindEvents = true;
-
-                    $model->current_version = $nextVersion;
-                    $model->save();
-
-                    $model->disableRewindEvents = false;
-                }
+                // We do not update the current_version column here, as that would disable the ability to "redo" back to the current state
             }
         });
 
