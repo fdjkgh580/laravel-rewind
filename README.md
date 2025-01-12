@@ -13,7 +13,7 @@ Imagine you have a Post model and want to track how the title and body evolve ov
 ```php
 use AvocetShores\LaravelRewind\Facades\Rewind;
 
-// Update the post, creating a new revision
+// Update the post, creating a new version
 $post->title = 'Updated Title';
 $post->save();
 
@@ -22,18 +22,23 @@ Rewind::undo($post);
 
 // Need that change back?
 Rewind::redo($post);
+```
 
-// Or jump directly to a specific version
-Rewind::goToVersion($post, 5);
+You can also view a list of previous versions of a model, see what changed, and even jump to a specific version.
+
+```php
+$versions = $post->versions;
+
+Rewind::goToVersion($post, $versions->first()->id);
 ```
 
 ## Features
 
 - Track all or specific attributes on any of your models.
-- Automatically log old and new values in a dedicated “rewind_revisions” table.
+- Automatically log old and new values in a dedicated “rewind_versions” table.
 - Easily undo or redo changes.
 - Optionally store your model’s current version for full undo/redo capabilities.
-- Access a revision audit log for each model to see every recorded version.
+- Access a version audit log for each model to see every recorded version.
 
 ## Installation
 
@@ -58,7 +63,7 @@ php artisan vendor:publish --tag="laravel-rewind-config"
 
 ## Getting Started
 
-To enable revision tracking on a model:
+To enable version tracking on a model:
 
 ### 1. Add the Rewindable trait to your Eloquent model:
 
@@ -93,7 +98,7 @@ php artisan rewind:add-version
 - Once this column is in place, the RewindManager will automatically manage your model’s current_version, allowing 
   proper undo/redo flows.
 
-That’s it! Now your model’s changes are recorded in the `rewind_revisions` table, and you can jump backwards or forwards in time.
+That’s it! Now your model’s changes are recorded in the `rewind_versions` table, and you can jump backwards or forwards in time.
 
 ## Usage
 
@@ -103,7 +108,7 @@ That’s it! Now your model’s changes are recorded in the `rewind_revisions` t
 $post = Post::find(1);
 $post->title = "New Title";
 $post->save();  
-// A new revision is automatically created
+// A new version is automatically created
 ```
 
 2. Undoing / Redoing with the Rewind Facade

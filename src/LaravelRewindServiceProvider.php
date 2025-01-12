@@ -4,7 +4,7 @@ namespace AvocetShores\LaravelRewind;
 
 use AvocetShores\LaravelRewind\Commands\AddVersionTrackingColumnCommand;
 use AvocetShores\LaravelRewind\Exceptions\InvalidConfigurationException;
-use AvocetShores\LaravelRewind\Models\RewindRevision;
+use AvocetShores\LaravelRewind\Models\RewindVersion;
 use AvocetShores\LaravelRewind\Services\RewindManager;
 use Illuminate\Database\Eloquent\Model;
 use Spatie\LaravelPackageTools\Package;
@@ -22,7 +22,7 @@ class LaravelRewindServiceProvider extends PackageServiceProvider
         $package
             ->name('laravel-rewind')
             ->hasConfigFile()
-            ->hasMigration('create_rewind_revisions_table')
+            ->hasMigration('create_rewind_versions_table')
             ->hasCommand(AddVersionTrackingColumnCommand::class);
     }
 
@@ -36,24 +36,14 @@ class LaravelRewindServiceProvider extends PackageServiceProvider
     /**
      * @throws InvalidConfigurationException
      */
-    public static function determineRewindRevisionModel(): string
+    public static function determineRewindVersionModel(): string
     {
-        $rewindModel = config('laravel-rewind.rewind_revision_model') ?? RewindRevision::class;
+        $rewindModel = config('laravel-rewind.rewind_version_model') ?? RewindVersion::class;
 
         if (! is_a($rewindModel, Model::class, true)) {
             throw InvalidConfigurationException::modelIsNotValid($rewindModel);
         }
 
         return $rewindModel;
-    }
-
-    /**
-     * @throws InvalidConfigurationException
-     */
-    public static function getRewindRevisionModelInstance(): Model
-    {
-        $rewindModel = static::determineRewindRevisionModel();
-
-        return new $rewindModel;
     }
 }

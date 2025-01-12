@@ -5,7 +5,7 @@ namespace AvocetShores\LaravelRewind\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class RewindRevision extends Model
+class RewindVersion extends Model
 {
     /**
      * Dynamically set the table name from config in the constructor.

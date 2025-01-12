@@ -4,7 +4,7 @@ namespace AvocetShores\LaravelRewind\Traits;
 
 use AvocetShores\LaravelRewind\Exceptions\InvalidConfigurationException;
 use AvocetShores\LaravelRewind\LaravelRewindServiceProvider;
-use AvocetShores\LaravelRewind\Models\RewindRevision;
+use AvocetShores\LaravelRewind\Models\RewindVersion;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Auth;
 
@@ -14,8 +14,8 @@ use Illuminate\Support\Facades\Auth;
  * When added to an Eloquent model, this trait will:
  *  - Listen to model events (creating/updating/deleting).
  *  - Capture "old" and "new" values for trackable attributes.
- *  - Store those values in a "rewind_revisions" table with a version number.
- *  - Provide a relationship to access the revision records as an audit log.
+ *  - Store those values in a "rewind_versions" table with a version number.
+ *  - Provide a relationship to access the version records as an audit log.
  */
 trait Rewindable
 {
@@ -31,23 +31,23 @@ trait Rewindable
             if (! empty($model->disableRewindEvents)) {
                 return;
             }
-            $model->recordRevision();
+            $model->recordVersion();
         });
 
         static::deleted(function ($model) {
             if (! empty($model->disableRewindEvents)) {
                 return;
             }
-            $model->recordRevision();
+            $model->recordVersion();
         });
     }
 
     /**
-     * A hasMany relationship to the revision records.
+     * A hasMany relationship to the version records.
      */
-    public function revisions(): HasMany
+    public function versions(): HasMany
     {
-        return $this->hasMany(RewindRevision::class, 'model_id')
+        return $this->hasMany(RewindVersion::class, 'model_id')
             ->where('model_type', static::class);
     }
 
@@ -56,7 +56,7 @@ trait Rewindable
      *
      * @throws InvalidConfigurationException
      */
-    protected function recordRevision(): void
+    protected function recordVersion(): void
     {
         // Get the attributes that have changed (or all if new model/deleted).
         // If nothing changed (e.g., a save with no modifications), do nothing.
@@ -95,12 +95,12 @@ trait Rewindable
         }
 
         // Get the next version number for this model
-        $nextVersion = ($this->revisions()->max('version') ?? 0) + 1;
+        $nextVersion = ($this->versions()->max('version') ?? 0) + 1;
 
-        // Create the revision record using the configured model.
-        $modelClass = LaravelRewindServiceProvider::determineRewindRevisionModel();
+        // Create the version record using the configured model.
+        $modelClass = LaravelRewindServiceProvider::determineRewindVersionModel();
 
-        // Create a new revision record
+        // Create a new version record
         $modelClass::create([
             'model_type' => static::class,
             'model_id' => $this->getKey(),
@@ -171,7 +171,7 @@ trait Rewindable
 
     /**
      * Determine if the model was just deleted.
-     * Useful to store a revision for the delete action if needed.
+     * Useful to store a version for the delete action if needed.
      */
     protected function wasDeleted(): bool
     {

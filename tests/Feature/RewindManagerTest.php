@@ -17,7 +17,7 @@ beforeEach(function () {
     test()->actingAs($this->user);
 });
 
-it('rewinds a model to the previous revision on undo', function () {
+it('rewinds a model to the previous version on undo', function () {
     // Arrange
     $post = Post::create([
         'user_id' => $this->user->id,
@@ -37,16 +37,16 @@ it('rewinds a model to the previous revision on undo', function () {
 
     $this->assertSame(2, $post->current_version);
 
-    // Act: Undo the last revision
+    // Act: Undo the last version
     Rewind::undo($post);
 
-    // Assert: The model should be reverted to the previous revision
+    // Assert: The model should be reverted to the previous version
     $this->assertSame(1, $post->current_version);
     $this->assertSame('Original Title', $post->title);
     $this->assertSame('Original Body', $post->body);
 });
 
-it('rewinds a model to the next revision on redo', function () {
+it('rewinds a model to the next version on redo', function () {
     // Arrange
     $post = Post::create([
         'user_id' => $this->user->id,
@@ -66,24 +66,24 @@ it('rewinds a model to the next revision on redo', function () {
 
     $this->assertSame(2, $post->current_version);
 
-    // Act: Undo the last revision
+    // Act: Undo the last version
     Rewind::undo($post);
 
-    // Assert: The model should be reverted to the previous revision
+    // Assert: The model should be reverted to the previous version
     $this->assertSame(1, $post->current_version);
     $this->assertSame('Original Title', $post->title);
     $this->assertSame('Original Body', $post->body);
 
-    // Act: Redo the last revision
+    // Act: Redo the last version
     Rewind::redo($post);
 
-    // Assert: The model should be reverted to the next revision
+    // Assert: The model should be reverted to the next version
     $this->assertSame(2, $post->current_version);
     $this->assertSame('Updated Title', $post->title);
     $this->assertSame('Updated Body', $post->body);
 });
 
-it('creates a new max revision when a model is updated while on a previous version', function () {
+it('creates a new max version when a model is updated while on a previous version', function () {
     // Arrange
     $post = Post::create([
         'user_id' => $this->user->id,
@@ -103,10 +103,10 @@ it('creates a new max revision when a model is updated while on a previous versi
 
     $this->assertSame(2, $post->current_version);
 
-    // Act: Undo the last revision
+    // Act: Undo the last version
     Rewind::undo($post);
 
-    // Assert: The model should be reverted to the previous revision
+    // Assert: The model should be reverted to the previous version
     $this->assertSame(1, $post->current_version);
     $this->assertSame('Original Title', $post->title);
     $this->assertSame('Original Body', $post->body);
@@ -146,7 +146,7 @@ it('can jump to a specified version', function () {
     // Act: Jump to version 1
     Rewind::goToVersion($post, 1);
 
-    // Assert: The model should be reverted to the previous revision
+    // Assert: The model should be reverted to the previous version
     $this->assertSame(1, $post->current_version);
     $this->assertSame('Original Title', $post->title);
     $this->assertSame('Original Body', $post->body);
@@ -154,13 +154,13 @@ it('can jump to a specified version', function () {
     // Act: Jump to version 2
     Rewind::goToVersion($post, 2);
 
-    // Assert: The model should be back to the latest revision
+    // Assert: The model should be back to the latest version
     $this->assertSame(2, $post->current_version);
     $this->assertSame('Updated Title', $post->title);
     $this->assertSame('Updated Body', $post->body);
 });
 
-it('throws an exception when jumping to a revision that does not exist', function () {
+it('throws an exception when jumping to a version that does not exist', function () {
     // Arrange
     $post = Post::create([
         'user_id' => $this->user->id,

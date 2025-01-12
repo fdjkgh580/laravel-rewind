@@ -1,6 +1,6 @@
 <?php
 
-use AvocetShores\LaravelRewind\Models\RewindRevision;
+use AvocetShores\LaravelRewind\Models\RewindVersion;
 use AvocetShores\LaravelRewind\Tests\Models\Post;
 use AvocetShores\LaravelRewind\Tests\Models\PostWithRewindableAttributes;
 use AvocetShores\LaravelRewind\Tests\Models\User;
@@ -20,9 +20,9 @@ beforeEach(function () {
     test()->actingAs($this->user);
 });
 
-it('creates a revision when a model is created', function () {
-    // Arrange: Ensure no revisions exist
-    $this->assertSame(0, RewindRevision::count());
+it('creates a version when a model is created', function () {
+    // Arrange: Ensure no versions exist
+    $this->assertSame(0, RewindVersion::count());
 
     // Act: Create a Post
     $post = Post::create([
@@ -31,67 +31,67 @@ it('creates a revision when a model is created', function () {
         'body' => 'This is the body content',
     ]);
 
-    // Assert: One revision should be created with the "old_values" mostly null,
+    // Assert: One version should be created with the "old_values" mostly null,
     // and "new_values" reflecting the newly inserted record.
-    $this->assertSame(1, RewindRevision::count());
+    $this->assertSame(1, RewindVersion::count());
 
-    $revision = RewindRevision::first();
+    $version = RewindVersion::first();
 
-    expect($revision->new_values)->toMatchArray([
+    expect($version->new_values)->toMatchArray([
         'title' => 'Initial Title',
         'body' => 'This is the body content',
     ])
-        ->and($revision->old_values)->toMatchArray([
+        ->and($version->old_values)->toMatchArray([
             'title' => null,
             'body' => null,
         ]);
     // Or empty array depending on your logic
 });
 
-it('creates a revision when a model is updated', function () {
+it('creates a version when a model is updated', function () {
     // Arrange
     $post = Post::create([
         'user_id' => $this->user->id,
         'title' => 'Original Title',
         'body' => 'Original Body',
     ]);
-    RewindRevision::query()->update(['created_at' => now()->subMinute()]);
+    RewindVersion::query()->update(['created_at' => now()->subMinute()]);
 
     // Act: Update the post
     $post->title = 'Updated Title';
     $post->body = 'Updated Body';
     $post->save();
 
-    // Assert: Revisions should now be 2
-    $this->assertSame(2, RewindRevision::count());
+    // Assert: Versions should now be 2
+    $this->assertSame(2, RewindVersion::count());
 
-    $latestRevision = RewindRevision::orderBy('id', 'desc')->first();
+    $latestVersion = RewindVersion::orderBy('id', 'desc')->first();
 
     // Check that old and new values reflect the change
-    expect($latestRevision->old_values)->toMatchArray([
+    expect($latestVersion->old_values)->toMatchArray([
         'title' => 'Original Title',
         'body' => 'Original Body',
     ])
-        ->and($latestRevision->new_values)->toMatchArray([
+        ->and($latestVersion->new_values)->toMatchArray([
             'title' => 'Updated Title',
             'body' => 'Updated Body',
         ]);
 });
 
-it('does not create a new revision if nothing changes on save', function () {
+it('does not create a new version if nothing changes on save', function () {
     // Arrange
     $post = $this->user->posts()->create([
         'title' => 'No Change Title',
         'body' => 'No Change Body',
     ]);
-    $originalRevisionCount = RewindRevision::count();
+    $originalVersionCount = RewindVersion::count();
 
     // Now retrieve post from the db and save it without making any changes
     $post = Post::find($post->id);
     $post->save();
 
-    // Assert: Revisions have not increased
-    $this->assertSame($originalRevisionCount, RewindRevision::count());
+    // Assert: Versions have not increased
+    $this->assertSame($originalVersionCount, RewindVersion::count());
 });
 
 it('can track only specified attributes if $rewindable is defined', function () {
@@ -106,43 +106,43 @@ it('can track only specified attributes if $rewindable is defined', function () 
         'body' => 'Untracked Body',
     ]);
 
-    // Assert: One revision should be created
-    $this->assertSame(1, $post->revisions()->count());
+    // Assert: One version should be created
+    $this->assertSame(1, $post->versions()->count());
 
     // Act: Get new post from db and update only the body
     $post = PostWithRewindableAttributes::find($post->id);
     $post->body = 'Updated Body';
     $post->save();
 
-    // Assert: No new revision should be created if body is not in the $rewindable array
-    $this->assertSame(1, $post->revisions()->count());
+    // Assert: No new version should be created if body is not in the $rewindable array
+    $this->assertSame(1, $post->versions()->count());
 
     // Act again: Update the title (which is in $rewindable)
     $post->title = 'Changed Title';
     $post->save();
 
-    // Assert: Now we should see a new revision
-    $this->assertSame(2, $post->revisions()->count());
+    // Assert: Now we should see a new version
+    $this->assertSame(2, $post->versions()->count());
 });
 
-it('creates a revision when a model is deleted (if we want to track deletions)', function () {
+it('creates a version when a model is deleted (if we want to track deletions)', function () {
     // Arrange
     $post = Post::create([
         'user_id' => 1,
         'title' => 'Delete Me',
         'body' => 'Delete Body',
     ]);
-    $this->assertSame(1, RewindRevision::count());
+    $this->assertSame(1, RewindVersion::count());
 
     // Act: Delete the model
     $post->delete();
 
-    // Assert: Now we should have 2 revisions in total, one for create, one for delete
-    $this->assertSame(2, RewindRevision::count());
+    // Assert: Now we should have 2 versions in total, one for create, one for delete
+    $this->assertSame(2, RewindVersion::count());
 });
 
-it('does not record a revision if disableRewindEvents is set to true before saving', function () {
-    // Sometimes we want to skip auto-creation of revisions, e.g. reverts.
+it('does not record a version if disableRewindEvents is set to true before saving', function () {
+    // Sometimes we want to skip auto-creation of versions, e.g. reverts.
 
     // Arrange
     $post = Post::create([
@@ -150,13 +150,13 @@ it('does not record a revision if disableRewindEvents is set to true before savi
         'title' => 'First Title',
         'body' => 'First Body',
     ]);
-    $this->assertSame(1, RewindRevision::count());
+    $this->assertSame(1, RewindVersion::count());
 
     // Act: Temporarily disable events and then update
     $post->disableRewindEvents = true;
     $post->title = 'Second Title';
     $post->save();
 
-    // Assert: No new revision was created
-    $this->assertSame(1, RewindRevision::count());
+    // Assert: No new version was created
+    $this->assertSame(1, RewindVersion::count());
 });
