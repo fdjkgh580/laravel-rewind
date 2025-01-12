@@ -5,8 +5,8 @@ namespace AvocetShores\LaravelRewind\Traits;
 use AvocetShores\LaravelRewind\Exceptions\InvalidConfigurationException;
 use AvocetShores\LaravelRewind\LaravelRewindServiceProvider;
 use AvocetShores\LaravelRewind\Models\RewindRevision;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Auth;
 
 /**
  * Trait Rewindable
@@ -21,8 +21,6 @@ trait Rewindable
 {
     /**
      * Boot the trait. Registers relevant event listeners.
-     *
-     * @return void
      */
     public static function bootRewindable(): void
     {
@@ -44,8 +42,6 @@ trait Rewindable
 
     /**
      * A hasMany relationship to the revision records.
-     *
-     * @return HasMany
      */
     public function revisions(): HasMany
     {
@@ -64,7 +60,7 @@ trait Rewindable
         // Get the attributes that have changed (or all if new model/deleted).
         // If nothing changed (e.g., a save with no modifications), do nothing.
         $dirty = $this->getDirty();
-        if (empty($dirty) && !$this->wasRecentlyCreated && !$this->wasDeleted()) {
+        if (empty($dirty) && ! $this->wasRecentlyCreated && ! $this->wasDeleted()) {
             return;
         }
 
@@ -105,19 +101,17 @@ trait Rewindable
 
         // Create a new revision record
         $modelClass::create([
-            'model_type'  => static::class,
-            'model_id'    => $this->getKey(),
-            'old_values'  => $oldValues ?: null,
-            'new_values'  => $newValues ?: null,
-            'version'     => $nextVersion,
-            config('laravel-rewind.user_id_column')     => $this->getTrackUser(),
+            'model_type' => static::class,
+            'model_id' => $this->getKey(),
+            'old_values' => $oldValues ?: null,
+            'new_values' => $newValues ?: null,
+            'version' => $nextVersion,
+            config('laravel-rewind.user_id_column') => $this->getTrackUser(),
         ]);
     }
 
     /**
      * Determine which attributes should be tracked.
-     *
-     * @return array
      */
     protected function getRewindableAttributes(): array
     {
@@ -155,14 +149,13 @@ trait Rewindable
         if (! config('laravel-rewind.track_user')) {
             return null;
         }
+
         return optional(Auth::user())->id;
     }
 
     /**
      * Determine if the model was just deleted.
      * Useful to store a revision for the delete action if needed.
-     *
-     * @return bool
      */
     protected function wasDeleted(): bool
     {

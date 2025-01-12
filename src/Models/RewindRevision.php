@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class RewindRevision extends Model
 {
     /**
-     * @param  array  $attributes
+     * Dynamically set the table name from config in the constructor.
      */
     public function __construct(array $attributes = [])
     {
@@ -47,13 +47,11 @@ class RewindRevision extends Model
     protected $casts = [
         'old_values' => 'array',
         'new_values' => 'array',
-        'version'    => 'integer',
+        'version' => 'integer',
     ];
 
     /**
      * Optional relationship to the user who made the change (if user tracking is enabled).
-     *
-     * @return BelongsTo
      */
     public function user(): BelongsTo
     {
