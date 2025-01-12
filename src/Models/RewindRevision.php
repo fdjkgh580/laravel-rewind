@@ -13,15 +13,15 @@ class RewindRevision extends Model
     public function __construct(array $attributes = [])
     {
         if (! isset($this->connection)) {
-            $this->setConnection(config('laravel-rewind.database_connection'));
+            $this->setConnection(config('rewind.database_connection'));
         }
 
         if (! isset($this->table)) {
-            $this->setTable(config('laravel-rewind.table_name'));
+            $this->setTable(config('rewind.table_name'));
         }
 
-        $this->fillable[] = config('laravel-rewind.user_id_column');
-        $this->casts[config('laravel-rewind.user_id_column')] = 'integer';
+        $this->fillable[] = config('rewind.user_id_column');
+        $this->casts[config('rewind.user_id_column')] = 'integer';
 
         parent::__construct($attributes);
     }

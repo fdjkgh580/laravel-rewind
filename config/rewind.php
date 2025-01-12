@@ -70,6 +70,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Rewind Revisions Table Connection
+    |--------------------------------------------------------------------------
+    |
+    | Here you may define the connection that the revisions table uses.
+    | By default, it is set to "null" which uses the default connection.
+    | You may override it via an environment variable or update this value directly.
+    |
+    */
+
+    'database_connection' => env('LARAVEL_REWIND_CONNECTION'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Track Authenticated User
     |--------------------------------------------------------------------------
     |
