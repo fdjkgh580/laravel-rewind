@@ -6,6 +6,7 @@ use AvocetShores\LaravelRewind\Commands\AddVersionTrackingColumnCommand;
 use AvocetShores\LaravelRewind\Commands\LaravelRewindCommand;
 use AvocetShores\LaravelRewind\Exceptions\InvalidConfigurationException;
 use AvocetShores\LaravelRewind\Models\RewindRevision;
+use AvocetShores\LaravelRewind\Services\RewindManager;
 use Illuminate\Database\Eloquent\Model;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
@@ -24,6 +25,13 @@ class LaravelRewindServiceProvider extends PackageServiceProvider
             ->hasConfigFile()
             ->hasMigration('create_rewind_revisions_table')
             ->hasCommand(AddVersionTrackingColumnCommand::class);
+    }
+
+    public function registeringPackage(): void
+    {
+        $this->app->singleton('laravel-rewind-manager', function () {
+            return new RewindManager();
+        });
     }
 
     /**
