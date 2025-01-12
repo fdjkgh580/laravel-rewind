@@ -1,19 +1,39 @@
-# Laravel Rewind is a simple, opinionated package that provides versioning, “undo,” and “redo” functionality for your Eloquent models
+# Laravel Rewind
 
 [![Latest Version on Packagist](https://img.shields.io/packagist/v/avocet-shores/laravel-rewind.svg?style=flat-square)](https://packagist.org/packages/avocet-shores/laravel-rewind)
 [![GitHub Tests Action Status](https://img.shields.io/github/actions/workflow/status/avocet-shores/laravel-rewind/run-tests.yml?branch=main&label=tests&style=flat-square)](https://github.com/avocet-shores/laravel-rewind/actions?query=workflow%3Arun-tests+branch%3Amain)
 [![GitHub Code Style Action Status](https://img.shields.io/github/actions/workflow/status/avocet-shores/laravel-rewind/fix-php-code-style-issues.yml?branch=main&label=code%20style&style=flat-square)](https://github.com/avocet-shores/laravel-rewind/actions?query=workflow%3A"Fix+PHP+code+style+issues"+branch%3Amain)
 [![Total Downloads](https://img.shields.io/packagist/dt/avocet-shores/laravel-rewind.svg?style=flat-square)](https://packagist.org/packages/avocet-shores/laravel-rewind)
 
-This is where your description should go. Limit it to a paragraph or two. Consider adding a small example.
+Laravel Rewind is a simple, opinionated package that provides versioning, undo, and redo functionality for your 
+Eloquent models.
 
-## Support us
+Imagine you have a Post model and want to track how the title and body evolve over time. With Rewind, you can do this in a few lines:
 
-[<img src="https://github-ads.s3.eu-central-1.amazonaws.com/laravel-rewind.jpg?t=1" width="419px" />](https://spatie.be/github-ad-click/laravel-rewind)
+```php
+use AvocetShores\LaravelRewind\Facades\Rewind;
 
-We invest a lot of resources into creating [best in class open source packages](https://spatie.be/open-source). You can support us by [buying one of our paid products](https://spatie.be/open-source/support-us).
+// Update the post, creating a new revision
+$post->title = 'Updated Title';
+$post->save();
 
-We highly appreciate you sending us a postcard from your hometown, mentioning which of our package(s) you are using. You'll find our address on [our contact page](https://spatie.be/about-us). We publish all received postcards on [our virtual postcard wall](https://spatie.be/open-source/postcards).
+// Oops! Let's revert
+Rewind::undo($post);
+
+// Need that change back?
+Rewind::redo($post);
+
+// Or jump directly to a specific version
+Rewind::goToVersion($post, 5);
+```
+
+## Features
+
+- Track all or specific attributes on any of your models.
+- Automatically log old and new values in a dedicated “rewind_revisions” table.
+- Easily undo or redo changes.
+- Optionally store your model’s current version for full undo/redo capabilities.
+- Access a revision audit log for each model to see every recorded version.
 
 ## Installation
 
@@ -30,30 +50,75 @@ php artisan vendor:publish --tag="laravel-rewind-migrations"
 php artisan migrate
 ```
 
-You can publish the config file with:
+You can (optionally) publish the config file with:
 
 ```bash
 php artisan vendor:publish --tag="laravel-rewind-config"
 ```
 
-This is the contents of the published config file:
+## Getting Started
+
+To enable revision tracking on a model:
+
+### 1. Add the Rewindable trait to your Eloquent model:
 
 ```php
-return [
-];
+use AvocetShores\LaravelRewind\Concerns\Rewindable;
+
+class Post extends Model
+{
+   use Rewindable;
+
+   // Option A: Track specific attributes
+   protected $rewindable = ['title', 'body'];
+   
+   // Option B: Track all attributes
+   // protected $rewindAll = true;
+}
 ```
 
-Optionally, you can publish the views using
+### 2. (Optional) For Full Redo Support:
+
+If you’d like to jump forward to future versions, you’ll need a way to track which version your model is 
+currently on. By default, Rewindable does not store a current version on your model’s table. To add it, you can use our 
+convenient artisan command to generate a migration:
 
 ```bash
-php artisan vendor:publish --tag="laravel-rewind-views"
+php artisan rewind:add-version
 ```
+
+- This command will prompt you for the table name you wish to extend.  
+- After providing the table name, it creates a migration file that adds a current_version column to that table.
+- Run `php artisan migrate` to apply it.  
+- Once this column is in place, the RewindManager will automatically manage your model’s current_version, allowing 
+  proper undo/redo flows.
+
+That’s it! Now your model’s changes are recorded in the `rewind_revisions` table, and you can jump backwards or forwards in time.
 
 ## Usage
 
+1. Updating a Model
+
 ```php
-$laravelRewind = new AvocetShores\LaravelRewind();
-echo $laravelRewind->echoPhrase('Hello, Avocet Shores!');
+$post = Post::find(1);
+$post->title = "New Title";
+$post->save();  
+// A new revision is automatically created
+```
+
+2. Undoing / Redoing with the Rewind Facade
+
+```php
+use AvocetShores\LaravelRewind\Facades\Rewind;
+
+// Undo the most recent change (move back one version)
+Rewind::undo($post);
+
+// Redo the change (if you haven't modified the post in between)
+Rewind::redo($post);
+
+// Jump directly to a specific version
+Rewind::goToVersion($post, 5);
 ```
 
 ## Testing
