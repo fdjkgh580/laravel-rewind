@@ -1,6 +1,5 @@
 <?php
 
-use AvocetShores\LaravelRewind\Facades\Rewind;
 use AvocetShores\LaravelRewind\Models\RewindRevision;
 use AvocetShores\LaravelRewind\Tests\Models\Post;
 use AvocetShores\LaravelRewind\Tests\Models\PostWithRewindableAttributes;
@@ -28,8 +27,8 @@ it('creates a revision when a model is created', function () {
     // Act: Create a Post
     $post = Post::create([
         'user_id' => $this->user->id,
-        'title'   => 'Initial Title',
-        'body'    => 'This is the body content',
+        'title' => 'Initial Title',
+        'body' => 'This is the body content',
     ]);
 
     // Assert: One revision should be created with the "old_values" mostly null,
@@ -53,8 +52,8 @@ it('creates a revision when a model is updated', function () {
     // Arrange
     $post = Post::create([
         'user_id' => $this->user->id,
-        'title'   => 'Original Title',
-        'body'    => 'Original Body',
+        'title' => 'Original Title',
+        'body' => 'Original Body',
     ]);
     RewindRevision::query()->update(['created_at' => now()->subMinute()]);
 
@@ -82,8 +81,8 @@ it('creates a revision when a model is updated', function () {
 it('does not create a new revision if nothing changes on save', function () {
     // Arrange
     $post = $this->user->posts()->create([
-        'title'   => 'No Change Title',
-        'body'    => 'No Change Body',
+        'title' => 'No Change Title',
+        'body' => 'No Change Body',
     ]);
     $originalRevisionCount = RewindRevision::count();
 
@@ -103,8 +102,8 @@ it('can track only specified attributes if $rewindable is defined', function () 
     // Arrange
     $post = PostWithRewindableAttributes::create([
         'user_id' => $this->user->id,
-        'title'   => 'Tracked Title',
-        'body'    => 'Untracked Body',
+        'title' => 'Tracked Title',
+        'body' => 'Untracked Body',
     ]);
 
     // Assert: One revision should be created
@@ -130,8 +129,8 @@ it('creates a revision when a model is deleted (if we want to track deletions)',
     // Arrange
     $post = Post::create([
         'user_id' => 1,
-        'title'   => 'Delete Me',
-        'body'    => 'Delete Body',
+        'title' => 'Delete Me',
+        'body' => 'Delete Body',
     ]);
     $this->assertSame(1, RewindRevision::count());
 
@@ -148,8 +147,8 @@ it('does not record a revision if disableRewindEvents is set to true before savi
     // Arrange
     $post = Post::create([
         'user_id' => 1,
-        'title'   => 'First Title',
-        'body'    => 'First Body',
+        'title' => 'First Title',
+        'body' => 'First Body',
     ]);
     $this->assertSame(1, RewindRevision::count());
 

@@ -11,7 +11,7 @@ class User extends Model implements Authenticatable
     protected $fillable = [
         'name',
         'email',
-        'password'
+        'password',
     ];
 
     public function getAuthIdentifierName(): string
@@ -41,9 +41,7 @@ class User extends Model implements Authenticatable
         return 'token';
     }
 
-    public function setRememberToken($value)
-    {
-    }
+    public function setRememberToken($value) {}
 
     public function getRememberTokenName(): string
     {

@@ -158,10 +158,10 @@ class RewindManager
 
                 $rewindModelClass::create([
                     'model_type' => get_class($model),
-                    'model_id'   => $model->getKey(),
+                    'model_id' => $model->getKey(),
                     'old_values' => $previousModelState,
                     'new_values' => $attributes,
-                    'version'    => $nextVersion,
+                    'version' => $nextVersion,
                     config('laravel-rewind.user_id_column') => $model->getTrackUser(),
                 ]);
             }
@@ -208,4 +208,3 @@ class RewindManager
             ->hasColumn($model->getTable(), 'current_version');
     }
 }
-

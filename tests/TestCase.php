@@ -54,7 +54,7 @@ class TestCase extends Orchestra
 
     protected function runMigrations(): void
     {
-        foreach (File::allFiles(__DIR__ . '/../database/migrations') as $migration) {
+        foreach (File::allFiles(__DIR__.'/../database/migrations') as $migration) {
             (require $migration->getPathname())->up();
         }
 

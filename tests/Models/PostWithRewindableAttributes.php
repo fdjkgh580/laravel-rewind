@@ -20,6 +20,4 @@ class PostWithRewindableAttributes extends Model
         'title',
         'body',
     ];
-
-
 }

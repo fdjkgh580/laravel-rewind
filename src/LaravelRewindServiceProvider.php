@@ -29,7 +29,7 @@ class LaravelRewindServiceProvider extends PackageServiceProvider
     public function registeringPackage(): void
     {
         $this->app->singleton('laravel-rewind-manager', function () {
-            return new RewindManager();
+            return new RewindManager;
         });
     }
 
