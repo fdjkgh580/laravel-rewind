@@ -1,6 +1,5 @@
 <?php
 
-use AvocetShores\LaravelRewind\Exceptions\LaravelRewindException;
 use AvocetShores\LaravelRewind\Exceptions\VersionDoesNotExistException;
 use AvocetShores\LaravelRewind\Facades\Rewind;
 use AvocetShores\LaravelRewind\Tests\Models\Post;
