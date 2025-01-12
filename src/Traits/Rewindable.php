@@ -109,6 +109,21 @@ trait Rewindable
             'version' => $nextVersion,
             config('laravel-rewind.user_id_column') => $this->getTrackUser(),
         ]);
+
+        // Update the current_version column if it exists
+        if ($this->modelHasCurrentVersionColumn()) {
+            $this->disableRewindEvents = true;
+
+            $this->current_version = $nextVersion;
+            $this->save();
+
+            $this->disableRewindEvents = false;
+        }
+    }
+
+    protected function modelHasCurrentVersionColumn(): bool
+    {
+        return $this->getConnection()->getSchemaBuilder()->hasColumn($this->getTable(), 'current_version');
     }
 
     /**
