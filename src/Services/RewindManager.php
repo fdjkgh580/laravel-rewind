@@ -86,7 +86,7 @@ class RewindManager
         }
 
         // Apply the version
-        return $this->applyVersion($model, $version);
+        return $this->applyVersion($model, $version->version);
     }
 
     /**
