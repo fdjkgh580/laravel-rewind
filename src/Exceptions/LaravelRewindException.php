@@ -2,7 +2,4 @@
 
 namespace AvocetShores\LaravelRewind\Exceptions;
 
-class LaravelRewindException extends \Exception
-{
-
-}
+class LaravelRewindException extends \Exception {}
