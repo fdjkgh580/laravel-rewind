@@ -1,5 +1,7 @@
 <?php
 
+use AvocetShores\LaravelRewind\Exceptions\LaravelRewindException;
+use AvocetShores\LaravelRewind\Exceptions\VersionDoesNotExistException;
 use AvocetShores\LaravelRewind\Facades\Rewind;
 use AvocetShores\LaravelRewind\Tests\Models\Post;
 use AvocetShores\LaravelRewind\Tests\Models\User;
@@ -44,3 +46,134 @@ it('rewinds a model to the previous revision on undo', function () {
     $this->assertSame('Original Title', $post->title);
     $this->assertSame('Original Body', $post->body);
 });
+
+it('rewinds a model to the next revision on redo', function () {
+    // Arrange
+    $post = Post::create([
+        'user_id' => $this->user->id,
+        'title' => 'Original Title',
+        'body' => 'Original Body',
+    ]);
+
+    $post->refresh();
+
+    // Assert the model has current_version set to 1
+    $this->assertSame(1, $post->current_version);
+
+    $post->update([
+        'title' => 'Updated Title',
+        'body' => 'Updated Body',
+    ]);
+
+    $this->assertSame(2, $post->current_version);
+
+    // Act: Undo the last revision
+    Rewind::undo($post);
+
+    // Assert: The model should be reverted to the previous revision
+    $this->assertSame(1, $post->current_version);
+    $this->assertSame('Original Title', $post->title);
+    $this->assertSame('Original Body', $post->body);
+
+    // Act: Redo the last revision
+    Rewind::redo($post);
+
+    // Assert: The model should be reverted to the next revision
+    $this->assertSame(2, $post->current_version);
+    $this->assertSame('Updated Title', $post->title);
+    $this->assertSame('Updated Body', $post->body);
+});
+
+it('creates a new max revision when a model is updated while on a previous version', function () {
+    // Arrange
+    $post = Post::create([
+        'user_id' => $this->user->id,
+        'title' => 'Original Title',
+        'body' => 'Original Body',
+    ]);
+
+    $post->refresh();
+
+    // Assert the model has current_version set to 1
+    $this->assertSame(1, $post->current_version);
+
+    $post->update([
+        'title' => 'Updated Title',
+        'body' => 'Updated Body',
+    ]);
+
+    $this->assertSame(2, $post->current_version);
+
+    // Act: Undo the last revision
+    Rewind::undo($post);
+
+    // Assert: The model should be reverted to the previous revision
+    $this->assertSame(1, $post->current_version);
+    $this->assertSame('Original Title', $post->title);
+    $this->assertSame('Original Body', $post->body);
+
+    // Act: Update the model again
+    $post->update([
+        'title' => 'Updated Title Again',
+        'body' => 'Updated Body Again',
+    ]);
+
+    // Assert: The model should now be at version 3
+    $this->assertSame(3, $post->current_version);
+    $this->assertSame('Updated Title Again', $post->title);
+    $this->assertSame('Updated Body Again', $post->body);
+});
+
+it('can jump to a specified version', function () {
+    // Arrange
+    $post = Post::create([
+        'user_id' => $this->user->id,
+        'title' => 'Original Title',
+        'body' => 'Original Body',
+    ]);
+
+    $post->refresh();
+
+    // Assert the model has current_version set to 1
+    $this->assertSame(1, $post->current_version);
+
+    $post->update([
+        'title' => 'Updated Title',
+        'body' => 'Updated Body',
+    ]);
+
+    $this->assertSame(2, $post->current_version);
+
+    // Act: Jump to version 1
+    Rewind::goToVersion($post, 1);
+
+    // Assert: The model should be reverted to the previous revision
+    $this->assertSame(1, $post->current_version);
+    $this->assertSame('Original Title', $post->title);
+    $this->assertSame('Original Body', $post->body);
+
+    // Act: Jump to version 2
+    Rewind::goToVersion($post, 2);
+
+    // Assert: The model should be back to the latest revision
+    $this->assertSame(2, $post->current_version);
+    $this->assertSame('Updated Title', $post->title);
+    $this->assertSame('Updated Body', $post->body);
+});
+
+it('throws an exception when jumping to a revision that does not exist', function () {
+    // Arrange
+    $post = Post::create([
+        'user_id' => $this->user->id,
+        'title' => 'Original Title',
+        'body' => 'Original Body',
+    ]);
+
+    $post->refresh();
+
+    // Assert the model has current_version set to 1
+    $this->assertSame(1, $post->current_version);
+
+    // Act: Jump to version 2
+    Rewind::goToVersion($post, 2);
+})->throws(VersionDoesNotExistException::class);

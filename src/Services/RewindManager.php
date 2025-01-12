@@ -3,6 +3,7 @@
 namespace AvocetShores\LaravelRewind\Services;
 
 use AvocetShores\LaravelRewind\Exceptions\LaravelRewindException;
+use AvocetShores\LaravelRewind\Exceptions\VersionDoesNotExistException;
 use AvocetShores\LaravelRewind\LaravelRewindServiceProvider;
 use AvocetShores\LaravelRewind\Traits\Rewindable;
 use Illuminate\Database\Eloquent\Model;
@@ -81,7 +82,7 @@ class RewindManager
         // Validate the target version
         $revision = $model->revisions()->where('version', $version)->first();
         if (! $revision) {
-            return false;
+            throw new VersionDoesNotExistException('The specified version does not exist.');
         }
 
         // Apply the revision
@@ -101,7 +102,7 @@ class RewindManager
 
         $revisionToApply = $model->revisions()->where('version', $targetVersion)->first();
         if (! $revisionToApply) {
-            throw new LaravelRewindException('Revision not found.');
+            throw new VersionDoesNotExistException('The specified version does not exist.');
         }
 
         // Prepare the new_values to be applied to the model
