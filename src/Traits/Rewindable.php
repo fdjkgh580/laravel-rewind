@@ -54,7 +54,6 @@ trait Rewindable
     /**
      * Capture the difference between old and new values, and store them in the database.
      *
-     * @return void
      * @throws InvalidConfigurationException
      */
     protected function recordRevision(): void

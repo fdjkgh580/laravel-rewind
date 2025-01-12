@@ -25,6 +25,7 @@ class AddVersionTrackingColumnCommand extends Command
 
         if (! $table) {
             $this->error('A table name is required.');
+
             return 1;
         }
 

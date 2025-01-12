@@ -3,7 +3,6 @@
 namespace AvocetShores\LaravelRewind;
 
 use AvocetShores\LaravelRewind\Commands\AddVersionTrackingColumnCommand;
-use AvocetShores\LaravelRewind\Commands\LaravelRewindCommand;
 use AvocetShores\LaravelRewind\Exceptions\InvalidConfigurationException;
 use AvocetShores\LaravelRewind\Models\RewindRevision;
 use AvocetShores\LaravelRewind\Services\RewindManager;
@@ -55,6 +54,6 @@ class LaravelRewindServiceProvider extends PackageServiceProvider
     {
         $rewindModel = static::determineRewindRevisionModel();
 
-        return new $rewindModel();
+        return new $rewindModel;
     }
 }
