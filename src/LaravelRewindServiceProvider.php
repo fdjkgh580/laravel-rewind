@@ -18,8 +18,7 @@ class LaravelRewindServiceProvider extends PackageServiceProvider
         $package
             ->name('laravel-rewind')
             ->hasConfigFile()
-            ->hasViews()
-            ->hasMigration('create_laravel_rewind_table')
+            ->hasMigration('create_rewind_revisions_table')
             ->hasCommand(LaravelRewindCommand::class);
     }
 }
