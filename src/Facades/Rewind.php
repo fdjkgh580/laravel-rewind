@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Facade;
  * @method static bool redo(Model $model) Redo the next version
  * @method static bool goToVersion(Model $model, int $version) Jump to a specific version
  */
-class LaravelRewind extends Facade
+class Rewind extends Facade
 {
     protected static function getFacadeAccessor(): string
     {
