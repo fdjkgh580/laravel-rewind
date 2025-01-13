@@ -26,7 +26,7 @@ it('creates a version when a model is created', function () {
     $this->assertSame(0, RewindVersion::count());
 
     // Act: Create a Post
-    $post = Post::create([
+    Post::create([
         'user_id' => $this->user->id,
         'title' => 'Initial Title',
         'body' => 'This is the body content',
