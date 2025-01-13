@@ -12,7 +12,7 @@ class AddVersionTrackingColumnCommand extends Command
 
     protected $description = 'Generate a migration to add the current_version column to a given table.';
 
-    protected string $stubPath = __DIR__.'/../../stubs/add_current_version_column.stub';
+    protected string $stubPath = __DIR__.'/../../stubs/add_current_version_column.php.stub';
 
     public function handle()
     {
