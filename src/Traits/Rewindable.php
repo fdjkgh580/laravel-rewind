@@ -166,7 +166,7 @@ trait Rewindable
             return null;
         }
 
-        return optional(Auth::user())->id;
+        return optional(Auth::user())->getKey();
     }
 
     /**
