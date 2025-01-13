@@ -1,6 +1,6 @@
 <?php
 
-// config for Avocet Shores/LaravelRewind
+// config for AvocetShores/LaravelRewind
 return [
 
     /*

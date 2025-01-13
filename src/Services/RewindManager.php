@@ -117,7 +117,7 @@ class RewindManager
 
         DB::transaction(function () use ($model, $attributes, $shouldRecordRewind, $previousModelState, $versionToApply) {
             // Temporarily disable normal Rewindable event handling
-            $model->disableRewindEvents = true;
+            $model->disableRewindEvents();
 
             // Update the model’s attributes to the "target" version state
             foreach ($attributes as $key => $value) {
@@ -132,7 +132,7 @@ class RewindManager
             $model->save();
 
             // Re-enable normal event handling
-            $model->disableRewindEvents = false;
+            $model->enableRewindEvents();
 
             // If desired, create a new version capturing the revert/redo event
             if ($shouldRecordRewind) {

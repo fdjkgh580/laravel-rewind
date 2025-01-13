@@ -19,7 +19,7 @@ use Illuminate\Support\Facades\Auth;
  */
 trait Rewindable
 {
-    public bool $disableRewindEvents = false;
+    protected bool $disableRewindEvents = false;
 
     /**
      * Boot the trait. Registers relevant event listeners.
@@ -112,12 +112,12 @@ trait Rewindable
 
         // Update the current_version column if it exists
         if ($this->modelHasCurrentVersionColumn()) {
-            $this->disableRewindEvents = true;
+            $this->disableRewindEvents();
 
             $this->current_version = $nextVersion;
             $this->save();
 
-            $this->disableRewindEvents = false;
+            $this->enableRewindEvents();
         }
     }
 
@@ -179,5 +179,15 @@ trait Rewindable
         // but for a permanent delete you need to check events differently.
         // For now, we simply check the "exists" property:
         return ! $this->exists;
+    }
+
+    public function disableRewindEvents(): void
+    {
+        $this->disableRewindEvents = true;
+    }
+
+    public function enableRewindEvents(): void
+    {
+        $this->disableRewindEvents = false;
     }
 }

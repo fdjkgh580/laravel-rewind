@@ -153,7 +153,7 @@ it('does not record a version if disableRewindEvents is set to true before savin
     $this->assertSame(1, RewindVersion::count());
 
     // Act: Temporarily disable events and then update
-    $post->disableRewindEvents = true;
+    $post->disableRewindEvents();
     $post->title = 'Second Title';
     $post->save();
 
