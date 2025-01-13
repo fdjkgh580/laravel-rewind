@@ -38,7 +38,7 @@ class LaravelRewindServiceProvider extends PackageServiceProvider
      */
     public static function determineRewindVersionModel(): string
     {
-        $rewindModel = config('laravel-rewind.rewind_version_model') ?? RewindVersion::class;
+        $rewindModel = config('rewind.rewind_version_model') ?? RewindVersion::class;
 
         if (! is_a($rewindModel, Model::class, true)) {
             throw InvalidConfigurationException::modelIsNotValid($rewindModel);

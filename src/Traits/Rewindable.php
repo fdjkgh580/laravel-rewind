@@ -136,18 +136,18 @@ trait Rewindable
             return array_keys($this->getAttributes());
         }
 
-        // If the package config is set to track all by default
-        // and the model doesn't override that, track all
-        if (
-            config('laravel-rewind.tracks_all_by_default') &&
-            ! property_exists($this, 'rewindable')
-        ) {
-            return array_keys($this->getAttributes());
-        }
-
         // Otherwise, if a $rewindable array is defined, use it
         if (property_exists($this, 'rewindable') && is_array($this->rewindable)) {
             return $this->rewindable;
+        }
+
+        // If the package config is set to track all by default
+        // and the model doesn't override that, track all
+        if (
+            config('rewind.tracks_all_by_default') &&
+            ! property_exists($this, 'rewindable')
+        ) {
+            return array_keys($this->getAttributes());
         }
 
         // If none of the above, default to an empty array
