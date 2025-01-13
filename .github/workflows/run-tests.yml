@@ -52,7 +52,7 @@ jobs:
         run: composer show -D
 
       - name: Execute tests
-        run: vendor/bin/pest --coverage --min=80
+        run: vendor/bin/pest --coverage-clover=coverage.xml --min=80
 
       - name: Upload coverage
         uses: codecov/codecov-action@v2
