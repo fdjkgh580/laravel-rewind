@@ -55,6 +55,7 @@ jobs:
         run: vendor/bin/pest --coverage-clover=coverage.xml --min=80
 
       - name: Upload coverage
+        if: matrix.os == 'ubuntu-latest' && matrix.php == '8.3' && startsWith(matrix.laravel, '11') && matrix.dependency-version == 'prefer-stable'
         uses: codecov/codecov-action@v5
         with:
             files: ./coverage.xml
