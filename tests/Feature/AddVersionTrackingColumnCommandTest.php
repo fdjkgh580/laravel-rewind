@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\File;
+
 use function Pest\Laravel\artisan;
 
 beforeEach(function () {
@@ -28,7 +29,7 @@ it('creates a migration file if the table argument is provided', function () {
     $tableName = 'posts';
 
     artisan('rewind:add-version', ['table' => $tableName])
-        ->expectsOutputToContain("Migration created:")
+        ->expectsOutputToContain('Migration created:')
         ->expectsOutput("Don't forget to run 'php artisan migrate'!")
         ->assertExitCode(0);
 
@@ -49,7 +50,7 @@ it('creates a migration file if the user provides table name at the prompt', fun
     // We'll omit the --table argument, so it will ask the user
     artisan('rewind:add-version')
         ->expectsQuestion('Which table do you want to add the current_version column to?', 'articles')
-        ->expectsOutputToContain("Migration created:")
+        ->expectsOutputToContain('Migration created:')
         ->expectsOutput("Don't forget to run 'php artisan migrate'!")
         ->assertExitCode(0);
 
@@ -61,4 +62,3 @@ it('creates a migration file if the user provides table name at the prompt', fun
     $contents = File::get(database_path('migrations/'.$fileName));
     expect($contents)->toContain("Schema::table('articles'");
 });
-
