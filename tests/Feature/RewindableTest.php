@@ -2,6 +2,7 @@
 
 use AvocetShores\LaravelRewind\Models\RewindVersion;
 use AvocetShores\LaravelRewind\Tests\Models\Post;
+use AvocetShores\LaravelRewind\Tests\Models\PostWithoutRewindableAttributes;
 use AvocetShores\LaravelRewind\Tests\Models\PostWithRewindableAttributes;
 use AvocetShores\LaravelRewind\Tests\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -159,4 +160,52 @@ it('does not record a version if disableRewindEvents is set to true before savin
 
     // Assert: No new version was created
     $this->assertSame(1, RewindVersion::count());
+});
+
+it('stores all attributes when the tracks all by default config is set', function () {
+    // Arrange
+    config()->set('rewind.tracks_all_by_default', true);
+
+    $post = PostWithoutRewindableAttributes::create([
+        'user_id' => $this->user->id,
+        'title' => 'First Title',
+        'body' => 'First Body',
+    ]);
+    $this->assertSame(1, RewindVersion::count());
+
+    $post->refresh();
+
+    // Act: Update the post
+    $post->title = 'Second Title';
+    $post->body = 'Second Body';
+    $post->save();
+
+    // Assert: The new version should have both title and body
+    $latestVersion = RewindVersion::orderBy('id', 'desc')->first();
+    expect($latestVersion->new_values)->toMatchArray([
+        'title' => 'Second Title',
+        'body' => 'Second Body',
+    ]);
+});
+
+it('can disable tracking all attributes by default', function () {
+    // Arrange
+    config()->set('rewind.tracks_all_by_default', false);
+
+    $post = PostWithoutRewindableAttributes::create([
+        'user_id' => $this->user->id,
+        'title' => 'First Title',
+        'body' => 'First Body',
+    ]);
+    $this->assertSame(0, RewindVersion::count());
+
+    $post->refresh();
+
+    // Act: Update the post
+    $post->title = 'Second Title';
+    $post->body = 'Second Body';
+    $post->save();
+
+    // There should be no new version created
+    $this->assertSame(0, RewindVersion::count());
 });
