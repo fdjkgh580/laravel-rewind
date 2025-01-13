@@ -129,7 +129,7 @@ it('can track only specified attributes if $rewindable is defined', function () 
 it('creates a version when a model is deleted (if we want to track deletions)', function () {
     // Arrange
     $post = Post::create([
-        'user_id' => 1,
+        'user_id' => $this->user->id,
         'title' => 'Delete Me',
         'body' => 'Delete Body',
     ]);
@@ -147,7 +147,7 @@ it('does not record a version if disableRewindEvents is set to true before savin
 
     // Arrange
     $post = Post::create([
-        'user_id' => 1,
+        'user_id' => $this->user->id,
         'title' => 'First Title',
         'body' => 'First Body',
     ]);
