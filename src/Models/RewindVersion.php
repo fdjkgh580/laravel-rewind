@@ -8,6 +8,26 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class RewindVersion extends Model
 {
     /**
+     * The attributes that are mass assignable.
+     */
+    protected $fillable = [
+        'model_type',
+        'model_id',
+        'old_values',
+        'new_values',
+        'version',
+    ];
+
+    /**
+     * The attributes that should be cast.
+     */
+    protected $casts = [
+        'old_values' => 'array',
+        'new_values' => 'array',
+        'version' => 'integer',
+    ];
+
+    /**
      * Dynamically set the table name from config in the constructor.
      */
     public function __construct(array $attributes = [])
@@ -25,30 +45,6 @@ class RewindVersion extends Model
 
         parent::__construct($attributes);
     }
-
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array
-     */
-    protected $fillable = [
-        'model_type',
-        'model_id',
-        'old_values',
-        'new_values',
-        'version',
-    ];
-
-    /**
-     * The attributes that should be cast.
-     *
-     * @var array
-     */
-    protected $casts = [
-        'old_values' => 'array',
-        'new_values' => 'array',
-        'version' => 'integer',
-    ];
 
     /**
      * Optional relationship to the user who made the change (if user tracking is enabled).
