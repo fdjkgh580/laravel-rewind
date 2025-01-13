@@ -3,6 +3,16 @@
 use Illuminate\Support\Facades\File;
 use function Pest\Laravel\artisan;
 
+beforeEach(function () {
+    // Ensure the migrations directory is clean before we start
+    File::cleanDirectory(database_path('migrations'));
+});
+
+afterEach(function () {
+    // Clean up after each test
+    File::cleanDirectory(database_path('migrations'));
+});
+
 it('exits with an error if no table argument is provided and the user does not supply one', function () {
     // We'll mock user input by simulating an empty response to the prompt.
     artisan('rewind:add-version')
@@ -36,8 +46,6 @@ it('creates a migration file if the table argument is provided', function () {
 });
 
 it('creates a migration file if the user provides table name at the prompt', function () {
-    File::cleanDirectory(database_path('migrations'));
-
     // We'll omit the --table argument, so it will ask the user
     artisan('rewind:add-version')
         ->expectsQuestion('Which table do you want to add the current_version column to?', 'articles')
