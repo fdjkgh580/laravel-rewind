@@ -105,5 +105,5 @@ return [
     |
     */
 
-    'tracks_all_by_default' => false,
+    'tracks_all_by_default' => true,
 ];
