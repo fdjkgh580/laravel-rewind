@@ -2,10 +2,10 @@
 
 namespace AvocetShores\LaravelRewind\Exceptions;
 
-class InvalidConfigurationException extends LaravelRewindException
+final class InvalidConfigurationException extends LaravelRewindException
 {
-    public static function ModelIsNotValid($model): static
+    public static function ModelIsNotValid($model): self
     {
-        return new static("The model [{$model}] isn't a valid Eloquent model.");
+        return new self("The model [{$model}] isn't a valid Eloquent model.");
     }
 }
