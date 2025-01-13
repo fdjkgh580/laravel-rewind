@@ -18,7 +18,7 @@ class RewindManager
      *
      * @throws LaravelRewindException
      */
-    public function undo(Model $model): bool
+    public function undo($model): bool
     {
         $this->assertRewindable($model);
 
@@ -49,7 +49,7 @@ class RewindManager
      *
      * @throws LaravelRewindException
      */
-    public function redo(Model $model): bool
+    public function redo($model): bool
     {
         $this->assertRewindable($model);
 
@@ -75,7 +75,7 @@ class RewindManager
      *
      * @throws LaravelRewindException
      */
-    public function goToVersion(Model $model, int $version): bool
+    public function goToVersion($model, int $version): bool
     {
         $this->assertRewindable($model);
 
@@ -95,7 +95,7 @@ class RewindManager
      *
      * @throws LaravelRewindException
      */
-    protected function applyVersion(Model $model, int $targetVersion): bool
+    protected function applyVersion($model, int $targetVersion): bool
     {
         // First, make sure the model implements the Rewindable trait
         $this->assertRewindable($model);
@@ -161,7 +161,7 @@ class RewindManager
      * If a current_version column exists, return it.
      * Otherwise, fallback to the highest version from the versions table (a best guess).
      */
-    protected function determineCurrentVersion(Model $model): int
+    protected function determineCurrentVersion($model): int
     {
         if ($this->modelHasCurrentVersionColumn($model)) {
             // Use the stored current_version, defaulting to 0
@@ -177,7 +177,7 @@ class RewindManager
      *
      * @throws LaravelRewindException
      */
-    protected function assertRewindable(Model $model): void
+    protected function assertRewindable($model): void
     {
         if (collect(class_uses_recursive($model::class))->doesntContain(Rewindable::class)) {
             throw new LaravelRewindException('Model must use the Rewindable trait to be rewound.');
@@ -187,7 +187,7 @@ class RewindManager
     /**
      * Check if the model's table has a 'current_version' column.
      */
-    protected function modelHasCurrentVersionColumn(Model $model): bool
+    protected function modelHasCurrentVersionColumn($model): bool
     {
         return Schema::connection($model->getConnectionName())
             ->hasColumn($model->getTable(), 'current_version');

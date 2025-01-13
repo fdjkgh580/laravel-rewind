@@ -53,7 +53,7 @@ return [
     |
     */
 
-    'user_model' => env('LARAVEL_REWIND_USER_MODEL', App\Models\User::class),
+    'user_model' => env('LARAVEL_REWIND_USER_MODEL', 'App\Models\User'),
 
     /*
     |--------------------------------------------------------------------------
