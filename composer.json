@@ -4,7 +4,9 @@
     "keywords": [
         "Avocet Shores",
         "laravel",
-        "laravel-rewind"
+        "laravel-rewind",
+        "rewind",
+        "versioning"
     ],
     "homepage": "https://github.com/avocet-shores/laravel-rewind",
     "license": "MIT",
