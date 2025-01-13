@@ -212,4 +212,9 @@ it('creates a new version when running undo if record_rewinds is enabled', funct
 
     // Assert all versions are attributed to the user
     $this->assertSame(3, $post->versions()->where('user_id', $this->user->id)->count());
+
+    // Assert each of the versions' user() relationship is the user
+    $post->versions->load('user')->each(function ($version) {
+        $this->assertSame($this->user->id, $version->user->id);
+    });
 });

@@ -57,8 +57,8 @@ class RewindVersion extends Model
     {
         // Update this to reference your actual User model namespace if needed.
         return $this->belongsTo(
-            config('laravel-rewind.user_model'),
-            config('laravel-rewind.user_id_column')
+            config('rewind.user_model'),
+            config('rewind.user_id_column')
         );
     }
 }
