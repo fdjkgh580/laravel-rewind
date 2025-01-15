@@ -16,6 +16,7 @@ class RewindVersion extends Model
         'old_values',
         'new_values',
         'version',
+        'is_snapshot',
     ];
 
     /**
@@ -25,6 +26,7 @@ class RewindVersion extends Model
         'old_values' => 'array',
         'new_values' => 'array',
         'version' => 'integer',
+        'is_snapshot' => 'boolean',
     ];
 
     /**
