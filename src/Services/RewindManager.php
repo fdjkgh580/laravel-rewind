@@ -5,10 +5,8 @@ namespace AvocetShores\LaravelRewind\Services;
 use AvocetShores\LaravelRewind\Enums\ApproachMethod;
 use AvocetShores\LaravelRewind\Exceptions\LaravelRewindException;
 use AvocetShores\LaravelRewind\Exceptions\VersionDoesNotExistException;
-use AvocetShores\LaravelRewind\LaravelRewindServiceProvider;
 use AvocetShores\LaravelRewind\Models\RewindVersion;
 use AvocetShores\LaravelRewind\Traits\Rewindable;
-use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -23,7 +21,6 @@ class RewindManager
      * Undo the most recent change by jumping from current_version
      * to the previous version, if any.
      *
-     * @param $model
      * @throws LaravelRewindException
      */
     public function undo($model): void
@@ -54,6 +51,7 @@ class RewindManager
                 snapshotRecord: $targetVersionModel,
                 shouldSave: true
             );
+
             return;
         }
 
@@ -88,6 +86,7 @@ class RewindManager
                 snapshotRecord: $nextVersion,
                 shouldSave: true
             );
+
             return;
         }
 
@@ -163,7 +162,7 @@ class RewindManager
                         ->first();
 
                     // If there's no partial diff for $ver (e.g. if it was a snapshot or doesn't exist), skip
-                    if (!$versionRec) {
+                    if (! $versionRec) {
                         continue;
                     }
 
@@ -179,7 +178,7 @@ class RewindManager
                         ->first();
 
                     // If there's no partial diff for $ver (e.g. if it was a snapshot or doesn't exist), skip
-                    if (!$versionRec) {
+                    if (! $versionRec) {
                         continue;
                     }
 

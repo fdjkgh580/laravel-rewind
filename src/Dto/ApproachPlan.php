@@ -13,7 +13,7 @@ class ApproachPlan
 
     public int $cost;
 
-    public function __construct(ApproachMethod $method, int $cost, RewindVersion $snapshot = null)
+    public function __construct(ApproachMethod $method, int $cost, ?RewindVersion $snapshot = null)
     {
         $this->method = $method;
         $this->cost = $cost;
