@@ -5,6 +5,9 @@ namespace AvocetShores\LaravelRewind\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * @property int $version
+ */
 class RewindVersion extends Model
 {
     /**
