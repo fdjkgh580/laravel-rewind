@@ -36,8 +36,8 @@ Rewind::goTo($post, $versions->first()->id);
 
 Under the hood, Rewind stores a combination of partial and full snapshots of your model’s data. The interval between 
 full snapshots is determined by the `rewind.snapshot_interval` config value. This provides you with a customizable trade-off 
-between storage cost and performance. Our engine will automatically determine the shortest path between your current version, available snapshots, and the 
-target version when you call `Rewind::goTo($post, $versionId)`.
+between storage cost and performance. Our engine will automatically determine the shortest path between your current 
+version, available snapshots, and your target.
 
 ### How does Rewind handle history and branching?
 
