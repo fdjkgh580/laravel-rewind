@@ -52,6 +52,8 @@ class RewindManager
                 shouldSave: true
             );
 
+            $this->updateModelVersion($model, $targetVersion);
+
             return;
         }
 
@@ -87,6 +89,7 @@ class RewindManager
                 shouldSave: true
             );
 
+            $this->updateModelVersion($model, $targetVersion);
             return;
         }
 
@@ -187,15 +190,30 @@ class RewindManager
                 }
             }
 
-            $model->disableRewindEvents();
+            $this->updateModelVersion($model, $targetVersion);
 
-            if ($this->modelHasCurrentVersionColumn($model)) {
-                $model->current_version = $targetVersion;
-            }
-            $model->save();
-
-            $model->enableRewindEvents();
         });
+    }
+
+    /**
+     * Update the model's current_version to the specified version without triggering Rewind events
+     *
+     * @param $model
+     * @param int $version
+     * @return void
+     */
+    protected function updateModelVersion($model, int $version): void
+    {
+        if (! $this->modelHasCurrentVersionColumn($model)) {
+            return;
+        }
+
+        $model->disableRewindEvents();
+
+        $model->current_version = $version;
+        $model->save();
+
+        $model->enableRewindEvents();
     }
 
     protected function applyPartialDiff($model, $versionRec): void

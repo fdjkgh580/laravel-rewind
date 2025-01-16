@@ -114,13 +114,12 @@ trait Rewindable
 
         // Determine if we should create a full snapshot
         $interval = config('rewind.snapshot_interval', 10);
-        $isSnapshot = ($nextVersion % $interval === 0);
+        $isSnapshot = ($nextVersion % $interval === 0) || $nextVersion === 1;
 
         if ($isSnapshot) {
-            $allAttributes = $this->attributesToArray();
-            // Optionally limit to subset if $rewindable is partial,
-            // but typically you'd store 100% for a true snapshot
-            $newValues = $allAttributes;
+            $allAttributes = $this->getAttributes();
+            // Filter down to our rewindable attributes
+            $newValues = Arr::only($allAttributes, $attributesToTrack);
         }
 
         // Create a new version record
@@ -131,6 +130,7 @@ trait Rewindable
             'new_values' => $newValues ?: null,
             'version' => $nextVersion,
             config('rewind.user_id_column') => $this->getRewindTrackUser(),
+            'is_snapshot' => $isSnapshot,
         ]);
 
         // Update the current_version column if it exists

@@ -163,6 +163,31 @@ it('can jump to a specified version', function () {
     $this->assertSame('Updated Body', $post->body);
 });
 
+it('can handle complex version history and goTo calls', function () {
+    $post = Post::create([
+        'user_id' => $this->user->id,
+        'title' => 'Original Title',
+        'body' => 'Original Body',
+    ]);
+    $post->refresh();
+
+    $this->assertDatabaseHas('rewind_versions', [
+        'model_id' => $post->id,
+        'version' => 1,
+        'old_values' => json_encode([
+            'user_id' => null,
+            'title' => null,
+            'body' => null,
+        ]),
+        'new_values' => json_encode([
+            'user_id' => $this->user->id,
+            'title' => 'Original Title',
+            'body' => 'Original Body',
+        ]),
+        'is_snapshot' => 1,
+    ]);
+});
+
 it('throws an exception when jumping to a version that does not exist', function () {
     // Arrange
     $post = Post::create([
