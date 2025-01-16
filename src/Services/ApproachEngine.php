@@ -17,7 +17,7 @@ class ApproachEngine
      *
      * This returns an ApproachPlan describing the best approach and the intermediate snapshot (if any).
      */
-    public function run(Model $model, int $currentVersion, int $targetVersion): ApproachPlan
+    public function run($model, int $currentVersion, int $targetVersion): ApproachPlan
     {
         // If currentVersion == targetVersion, there’s nothing to do.
         if ($currentVersion === $targetVersion) {
@@ -85,7 +85,7 @@ class ApproachEngine
     /**
      * Count how many partial diffs lie strictly between $fromVersion and $toVersion (inclusive of $toVersion).
      */
-    protected function countPartialDiffs(Model $model, int $fromVersion, int $toVersion): int
+    protected function countPartialDiffs($model, int $fromVersion, int $toVersion): int
     {
         if ($toVersion <= $fromVersion) {
             return 0;
@@ -100,7 +100,7 @@ class ApproachEngine
     /**
      * Find the closest snapshot at or below $version.
      */
-    protected function findNearestSnapshotBehind(Model $model, int $version)
+    protected function findNearestSnapshotBehind($model, int $version)
     {
         return $model->versions
             ->where('is_snapshot', true)
@@ -112,7 +112,7 @@ class ApproachEngine
     /**
      * Find the closest snapshot at or above $version.
      */
-    protected function findNearestSnapshotAhead(Model $model, int $version)
+    protected function findNearestSnapshotAhead($model, int $version)
     {
         return $model->versions
             ->where('is_snapshot', true)
