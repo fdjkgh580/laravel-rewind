@@ -68,4 +68,19 @@ return [
 
     'track_user' => true,
 
+    /*
+    |--------------------------------------------------------------------------
+    | Snapshot Interval
+    |--------------------------------------------------------------------------
+    |
+    | Here you may define the interval between versions that should be stored
+    | as a full snapshot. By default, it is set to 10, but you may adjust
+    | this value to suit your application's needs. Higher values reduce
+    | the amount of data stored at the cost of longer traversal times.
+    |
+    | **Set this to a high value if you only intend on using undo/redo.**
+    |
+    */
+
+    'snapshot_interval' => env('LARAVEL_REWIND_SNAPSHOT_INTERVAL', 10),
 ];

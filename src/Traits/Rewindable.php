@@ -113,7 +113,7 @@ trait Rewindable
         $nextVersion = ($this->versions()->max('version') ?? 0) + 1;
 
         // Determine if we should create a full snapshot
-        $interval = config('rewind.full_snapshot_interval', 10);
+        $interval = config('rewind.snapshot_interval', 10);
         $isSnapshot = ($nextVersion % $interval === 0);
 
         if ($isSnapshot) {
