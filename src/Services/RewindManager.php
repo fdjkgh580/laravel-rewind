@@ -18,83 +18,31 @@ class RewindManager
     ) {}
 
     /**
-     * Undo the most recent change by jumping from current_version
-     * to the previous version, if any.
+     * Rewind by a specified number of steps.
      *
      * @throws LaravelRewindException
      */
-    public function undo($model): void
+    public function rewind($model, int $steps = 1): void
     {
         $this->assertRewindable($model);
-        $this->eagerLoadVersions($model);
 
-        // Identify the model's actual current version
-        $currentVersion = $this->determineCurrentVersion($model);
+        $targetVersion = $this->determineCurrentVersion($model) - $steps;
 
-        if ($currentVersion <= 1) {
-            // If the model is at version 0 or 1, there’s nothing to undo back to
-            return;
-        }
-
-        $targetVersion = $currentVersion - 1;
-        $targetVersionModel = $model->versions->where('version', $targetVersion)->first();
-
-        if (! $targetVersionModel) {
-            // If the target version doesn't exist, there's nothing to undo back to
-            return;
-        }
-
-        // If the target version is a snapshot, apply it directly
-        if ($targetVersionModel->is_snapshot) {
-            $this->applySnapshot(
-                model: $model,
-                snapshotRecord: $targetVersionModel,
-                shouldSave: true
-            );
-
-            $this->updateModelVersion($model, $targetVersion);
-
-            return;
-        }
-
-        // Otherwise, apply partial diffs in reverse from currentVersion down to targetVersion
-        $this->applyDiffs($model, $currentVersion, $targetVersion);
+        $this->goTo($model, $targetVersion);
     }
 
     /**
-     * Fast-forward (redo) to the next version, if one exists.
+     * Fast-forward by a specified number of steps.
      *
      * @throws LaravelRewindException
      */
-    public function redo($model): void
+    public function fastForward($model, int $steps = 1): void
     {
         $this->assertRewindable($model);
-        $this->eagerLoadVersions($model);
 
-        // Identify the model's current version
-        $currentVersion = $this->determineCurrentVersion($model);
+        $targetVersion = $this->determineCurrentVersion($model) + $steps;
 
-        $targetVersion = $currentVersion + 1;
-        $nextVersion = $model->versions->where('version', $targetVersion)->first();
-
-        if (! $nextVersion) {
-            return;
-        }
-
-        // If the next version is a snapshot, apply it directly
-        if ($nextVersion->is_snapshot) {
-            $this->applySnapshot(
-                model: $model,
-                snapshotRecord: $nextVersion,
-                shouldSave: true
-            );
-
-            $this->updateModelVersion($model, $targetVersion);
-            return;
-        }
-
-        // Apply the next version
-        $this->applyDiffs($model, $currentVersion, $nextVersion->version);
+        $this->goTo($model, $targetVersion);
     }
 
     /**
@@ -161,10 +109,9 @@ class RewindManager
                 for ($ver = $currentVersion; $ver > $targetVersion; $ver--) {
                     $versionRec = $model->versions
                         ->where('version', $ver)
-                        ->where('is_snapshot', false)
                         ->first();
 
-                    // If there's no partial diff for $ver (e.g. if it was a snapshot or doesn't exist), skip
+                    // If there's no partial diff for $ver (e.g. it doesn't exist), skip
                     if (! $versionRec) {
                         continue;
                     }
@@ -287,9 +234,7 @@ class RewindManager
 
     protected function eagerLoadVersions(Model $model): void
     {
-        if (! $model->relationLoaded('versions')) {
-            $model->load('versions');
-        }
+        $model->load('versions');
     }
 
     /**

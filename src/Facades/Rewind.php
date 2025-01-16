@@ -8,8 +8,8 @@ use Illuminate\Support\Facades\Facade;
 /**
  * @see \AvocetShores\LaravelRewind\Services\RewindManager
  *
- * @method static bool undo(Model $model) Undo the most recent change
- * @method static bool redo(Model $model) Redo the next version
+ * @method static bool rewind(Model $model, int $steps = 1) Rewind by a specified number of steps
+ * @method static bool fastForward(Model $model, int $steps = 1) Fast-forward by a specified number of steps
  * @method static bool goTo(Model $model, int $version) Jump to a specific version
  */
 class Rewind extends Facade

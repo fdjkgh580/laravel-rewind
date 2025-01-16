@@ -68,6 +68,23 @@ trait Rewindable
             ->where('model_type', static::class);
     }
 
+    protected function rebuildHeadVersion(): array
+    {
+        $data = [];
+        $this->load('versions');
+        $lastSnapshot = $this->versions()->where('is_snapshot', true)->latest('version')->first();
+        if ($lastSnapshot) {
+            $data = $lastSnapshot->new_values;
+        }
+
+        // Loop through all versions since the last snapshot
+        $this->versions()->where('version', '>', $lastSnapshot->version)->orderBy('version')->each(function ($version) use (&$data) {
+            $data = array_merge($data, $version->new_values);
+        });
+
+        return $data;
+    }
+
     /**
      * Capture the difference between old and new values, and store them in the database.
      */
@@ -87,17 +104,30 @@ trait Rewindable
         $oldValues = [];
         $newValues = [];
 
+        // Get the next version number for this model
+        $nextVersion = ($this->versions()->max('version') ?? 0) + 1;
+
+        // If our current version is not the head, we need to rebuild the head record, then store all of its trackable attributes as old_values.
+        // We then store the new values as the current model attributes, and set it to be a snapshot
+        $isSnapshot = false;
+        if ($this->current_version && $this->current_version !== $nextVersion - 1) {
+            $isSnapshot = true;
+            $oldValues = $this->rebuildHeadVersion();
+        }
+
         // For each attribute to track, see if it changed (or if creating/deleting)
         foreach ($attributesToTrack as $attribute) {
-            // If the model was just created, there's no "old" value,
-            // but let's check the original if it exists.
-            $originalValue = $this->getOriginal($attribute);
+
+            // Use the head values from earlier if we're not at the head
+            isset($oldValues[$attribute]) ?
+                $originalValue = $oldValues[$attribute] :
+                $originalValue = $this->getOriginal($attribute);
 
             // If the attribute is truly changed, or if wasRecentlyCreated/wasDeleted
             if (
-                $this->wasRecentlyCreated
+                ($this->wasRecentlyCreated && empty($originalValue))
                 || $this->wasDeleted()
-                || Arr::exists($dirty, $attribute)
+                || array_key_exists($attribute, $dirty)
             ) {
                 $oldValues[$attribute] = $originalValue;
                 $newValues[$attribute] = $this->getAttribute($attribute);
@@ -109,12 +139,12 @@ trait Rewindable
             return;
         }
 
-        // Get the next version number for this model
-        $nextVersion = ($this->versions()->max('version') ?? 0) + 1;
 
         // Determine if we should create a full snapshot
         $interval = config('rewind.snapshot_interval', 10);
-        $isSnapshot = ($nextVersion % $interval === 0) || $nextVersion === 1;
+        if (! $isSnapshot) {
+            $isSnapshot = ($nextVersion % $interval === 0) || $nextVersion === 1;
+        }
 
         if ($isSnapshot) {
             $allAttributes = $this->getAttributes();

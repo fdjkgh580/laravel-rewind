@@ -26,10 +26,7 @@ class ApproachEngine
             );
         }
 
-        // Load versions if not already loaded
-        if (! $model->relationLoaded('versions')) {
-            $model->load('versions');
-        }
+        $model->load('versions');
 
         // Count partial diffs for direct forward/backward from currentVersion.
         $directCost = $this->countPartialDiffs($model, min($currentVersion, $targetVersion), max($currentVersion, $targetVersion));

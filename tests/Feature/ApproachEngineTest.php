@@ -22,22 +22,9 @@ function makeMockModel(array $versions, bool $relationIsLoaded = true): Model
     // that pretends the "versions" relationship is a Collection.
     $model = Mockery::mock(Model::class);
 
-    // Expectation for relationLoaded('versions').
-    $model->shouldReceive('relationLoaded')
+    $model->shouldReceive('load')
         ->with('versions')
-        ->andReturn($relationIsLoaded);
-
-    if (! $relationIsLoaded) {
-        // If not loaded, we expect a load('versions') call exactly once,
-        // returning $model so that subsequent calls still work.
-        $model->shouldReceive('load')
-            ->with('versions')
-            ->times(1)
-            ->andReturn($model);
-    } else {
-        // If it’s already loaded, we should never call ->load().
-        $model->shouldNotReceive('load');
-    }
+        ->andReturn($model);
 
     // Convert each element of $versions into a RewindVersion so that
     // ->where(...) calls on the collection still work properly.
