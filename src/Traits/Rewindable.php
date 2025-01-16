@@ -6,6 +6,7 @@ use AvocetShores\LaravelRewind\Exceptions\InvalidConfigurationException;
 use AvocetShores\LaravelRewind\LaravelRewindServiceProvider;
 use AvocetShores\LaravelRewind\Models\RewindVersion;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
 
 /**
@@ -20,6 +21,17 @@ use Illuminate\Support\Facades\Auth;
 trait Rewindable
 {
     protected bool $disableRewindEvents = false;
+
+
+    protected function getExcludedRewindableAttributes(): array
+    {
+        return [
+            $this->getKeyName(),
+            'created_at',
+            'updated_at',
+            'current_version',
+        ];
+    }
 
     /**
      * Boot the trait. Registers relevant event listeners.
@@ -82,7 +94,7 @@ trait Rewindable
             if (
                 $this->wasRecentlyCreated
                 || $this->wasDeleted()
-                || array_key_exists($attribute, $dirty)
+                || Arr::exists($dirty, $attribute)
             ) {
                 $oldValues[$attribute] = $originalValue;
                 $newValues[$attribute] = $this->getAttribute($attribute);
@@ -97,11 +109,19 @@ trait Rewindable
         // Get the next version number for this model
         $nextVersion = ($this->versions()->max('version') ?? 0) + 1;
 
-        // Create the version record using the configured model.
-        $modelClass = LaravelRewindServiceProvider::determineRewindVersionModel();
+        // Determine if we should create a full snapshot
+        $interval = config('rewind.full_snapshot_interval', 10);
+        $isSnapshot = ($nextVersion % $interval === 0);
+
+        if ($isSnapshot) {
+            $allAttributes = $this->attributesToArray();
+            // Optionally limit to subset if $rewindable is partial,
+            // but typically you'd store 100% for a true snapshot
+            $newValues = $allAttributes;
+        }
 
         // Create a new version record
-        $modelClass::create([
+        RewindVersion::create([
             'model_type' => static::class,
             'model_id' => $this->getKey(),
             'old_values' => $oldValues ?: null,
@@ -131,28 +151,11 @@ trait Rewindable
      */
     protected function getRewindableAttributes(): array
     {
-        // If the model has $rewindAll set to true, track all
-        if (property_exists($this, 'rewindAll') && $this->rewindAll) {
-            return array_keys($this->getAttributes());
-        }
-
-        // Otherwise, if a $rewindable array is defined, use it
-        if (property_exists($this, 'rewindable') && is_array($this->rewindable)) {
-            return $this->rewindable;
-        }
-
-        // If the package config is set to track all by default
-        // and the model doesn't override that, track all
-        if (
-            config('rewind.tracks_all_by_default') &&
-            ! property_exists($this, 'rewindable')
-        ) {
-            return array_keys($this->getAttributes());
-        }
-
-        // If none of the above, default to an empty array
-        // meaning we don't track anything on this model
-        return [];
+        // Track everything except timestamps, primary key, and current_version
+        return array_keys(Arr::except(
+            $this->getAttributes(),
+            $this->getExcludedRewindableAttributes()
+        ));
     }
 
     /**
