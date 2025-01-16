@@ -29,21 +29,7 @@ class LaravelRewindServiceProvider extends PackageServiceProvider
     public function registeringPackage(): void
     {
         $this->app->singleton('laravel-rewind-manager', function () {
-            return new RewindManager;
+            return $this->app->make(RewindManager::class);
         });
-    }
-
-    /**
-     * @throws InvalidConfigurationException
-     */
-    public static function determineRewindVersionModel(): string
-    {
-        $rewindModel = config('rewind.rewind_version_model') ?? RewindVersion::class;
-
-        if (! is_a($rewindModel, Model::class, true)) {
-            throw InvalidConfigurationException::modelIsNotValid($rewindModel);
-        }
-
-        return $rewindModel;
     }
 }
