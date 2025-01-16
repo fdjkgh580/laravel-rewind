@@ -30,10 +30,13 @@ trait Rewindable
             'current_version',
         ];
 
-        return array_unique(array_merge($defaultExclusions, $this->excludeFromRewindable()));
+        return array_unique(array_merge($defaultExclusions, $this->excludedFromVersioning()));
     }
 
-    public static function excludeFromRewindable(): array
+    /**
+     * Define any additional attributes to exclude from rewind's versions.
+     */
+    public static function excludedFromVersioning(): array
     {
         return [];
     }

@@ -161,6 +161,17 @@ That’s it! Now your model’s changes are recorded in the `rewind_versions` ta
     // Jump directly to a specific version
     Rewind::goTo($post, 5);
     ```
+3. Excluding attributes from versioning
+
+    If you have attributes that you don't want to track, you can exclude them by adding an `excludedFromVersioning` 
+   method to your model:
+
+    ```php
+    public static function excludedFromVersioning(): array
+    {
+        return ['password', 'api_token'];
+    }
+    ```
 
 ## Testing
 

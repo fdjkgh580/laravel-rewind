@@ -17,7 +17,7 @@ class PostWithExcludedAttributes extends Model
         'body',
     ];
 
-    public static function excludeFromRewindable(): array
+    public static function excludedFromVersioning(): array
     {
         return ['body'];
     }
