@@ -294,6 +294,49 @@ it('throws an exception when jumping to a version that does not exist', function
     Rewind::goTo($post, 2);
 })->throws(VersionDoesNotExistException::class);
 
+it('is able to fast-forward to a snapshot', function () {
+    app()->config->set('rewind.snapshot_interval', 3);
+
+    // Arrange
+    $post = Post::create([
+        'user_id' => $this->user->id,
+        'title' => 'Original Title',
+        'body' => 'Original Body',
+    ]);
+
+    $post->refresh();
+
+    // Assert the model has current_version set to 1
+    $this->assertSame(1, $post->current_version);
+
+    $post->update([
+        'title' => 'Updated Title',
+        'body' => 'Updated Body',
+    ]);
+
+    $this->assertSame(2, $post->current_version);
+
+    // Snapshot
+    $post->update([
+        'title' => 'Updated Title Again',
+        'body' => 'Updated Body Again',
+    ]);
+
+    $this->assertSame(3, $post->current_version);
+
+    Rewind::rewind($post);
+
+    $this->assertSame(2, $post->current_version);
+
+    // Act: Fast-forward to the snapshot
+    Rewind::fastForward($post);
+
+    // Assert: The model should be at the snapshot version
+    $this->assertSame(3, $post->current_version);
+    $this->assertSame('Updated Title Again', $post->title);
+    $this->assertSame('Updated Body Again', $post->body);
+});
+
 it('throws an exception when we try to rewind before version 1', function () {
     // Arrange
     $post = Post::create([

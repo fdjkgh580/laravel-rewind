@@ -124,7 +124,6 @@ class RewindManager
                 for ($ver = $currentVersion + 1; $ver <= $targetVersion; $ver++) {
                     $versionRec = $model->versions
                         ->where('version', $ver)
-                        ->where('is_snapshot', false)
                         ->first();
 
                     // If there's no partial diff for $ver (e.g. if it was a snapshot or doesn't exist), skip
