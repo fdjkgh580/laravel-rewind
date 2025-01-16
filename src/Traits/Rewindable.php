@@ -2,8 +2,6 @@
 
 namespace AvocetShores\LaravelRewind\Traits;
 
-use AvocetShores\LaravelRewind\Exceptions\InvalidConfigurationException;
-use AvocetShores\LaravelRewind\LaravelRewindServiceProvider;
 use AvocetShores\LaravelRewind\Models\RewindVersion;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Arr;
@@ -22,15 +20,22 @@ trait Rewindable
 {
     protected bool $disableRewindEvents = false;
 
-
     protected function getExcludedRewindableAttributes(): array
     {
-        return [
+        // Merge the default exclusions with any custom exclusions
+        $defaultExclusions = [
             $this->getKeyName(),
             'created_at',
             'updated_at',
             'current_version',
         ];
+
+        return array_unique(array_merge($defaultExclusions, $this->excludeFromRewindable()));
+    }
+
+    public static function excludeFromRewindable(): array
+    {
+        return [];
     }
 
     /**
