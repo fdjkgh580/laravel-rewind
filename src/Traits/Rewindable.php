@@ -139,7 +139,6 @@ trait Rewindable
             return;
         }
 
-
         // Determine if we should create a full snapshot
         $interval = config('rewind.snapshot_interval', 10);
         if (! $isSnapshot) {
