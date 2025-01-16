@@ -68,16 +68,4 @@ return [
 
     'track_user' => true,
 
-    /*
-    |--------------------------------------------------------------------------
-    | Default to Tracking All Attributes
-    |--------------------------------------------------------------------------
-    |
-    | If this is set to true, any model using the Rewindable trait will track
-    | all of its attributes by default. You can still override by specifying
-    | $rewindable or $rewindAll on individual models.
-    |
-    */
-
-    'tracks_all_by_default' => true,
 ];
