@@ -90,6 +90,7 @@ class RewindManager
             );
 
             $this->updateModelVersion($model, $targetVersion);
+
             return;
         }
 
@@ -197,10 +198,6 @@ class RewindManager
 
     /**
      * Update the model's current_version to the specified version without triggering Rewind events
-     *
-     * @param $model
-     * @param int $version
-     * @return void
      */
     protected function updateModelVersion($model, int $version): void
     {
