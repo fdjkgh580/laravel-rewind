@@ -17,11 +17,11 @@ use AvocetShores\LaravelRewind\Facades\Rewind;
 $post->title = 'Updated Title';
 $post->save();
 
-// Oops! Let's revert
-Rewind::undo($post);
+// Let's go back in time
+Rewind::rewind($post);
 
-// Need that change back?
-Rewind::redo($post);
+// Or fast-forward
+Rewind::fastForward($post);
 ```
 
 You can also view a list of previous versions of a model, see what changed, and even jump to a specific version.
@@ -35,11 +35,59 @@ Rewind::goTo($post, $versions->first()->id);
 ## How It Works
 
 Under the hood, Rewind stores a combination of partial and full snapshots of your model’s data. The interval between 
-full
-snapshots is determined by the `rewind.snapshot_interval` config value. This provides you with a customizable trade-off 
-between storage cost and performance.
-Our engine will automatically determine the shortest path between your current version, available snapshots, and the 
+full snapshots is determined by the `rewind.snapshot_interval` config value. This provides you with a customizable trade-off 
+between storage cost and performance. Our engine will automatically determine the shortest path between your current version, available snapshots, and the 
 target version when you call `Rewind::goTo($post, $versionId)`.
+
+### How does Rewind handle history and branching?
+
+Rewind tries to maintain a simple linear history of your model’s changes. But what happens when you update a model 
+while on an older version? Let's take a look:
+
+1. You create a new version of your model.
+
+    ```php
+    // Previous title: 'Old Title'
+    $post->title = 'New Title';
+    $post->save();
+    ```
+
+2. You rewind to a previous version.
+
+    ```php
+    // Title goes back to 'Old Title'
+    Rewind::rewind($post);
+    ```
+
+3. You update the model *while on an older version*.
+
+   ```php
+   $post->title = 'Rewind is Awesome!';
+   $post->save();
+   ```
+
+4. What is the current version, and what's in it?
+
+    In order to maintain a linear, non-destructive history, Rewind uses the previous head version as the 
+    content for `old_values` for the new version you just created, while creating a full snapshot of the model’s current state and making it the new 
+    head. So the current version looks like this:
+
+    ```php
+    [
+        'version' => 3,
+        'old_values' => [
+            'title' => 'New Title',
+            // Other attributes...
+        ],
+        'new_values' => [
+            'title' => 'Rewind is Awesome!',
+            // Other attributes...
+        ],
+    ]
+    ```
+
+In other words, your model's history always looks like you updated from the highest version. This way, you can always see 
+what changed between versions, even if you jump back and forth in time. And you can always revert to a previous version without losing any data.
 
 ## Installation
 
@@ -93,27 +141,27 @@ That’s it! Now your model’s changes are recorded in the `rewind_versions` ta
 
 1. Updating a Model
 
-```php
-$post = Post::find(1);
-$post->title = "New Title";
-$post->save();  
-// A new version is automatically created
-```
+    ```php
+    $post = Post::find(1);
+    $post->title = "New Title";
+    $post->save();  
+    // A new version is automatically created
+    ```
 
-2. Undoing / Redoing with the Rewind Facade
+2. Using the Rewind Facade
 
-```php
-use AvocetShores\LaravelRewind\Facades\Rewind;
+    ```php
+    use AvocetShores\LaravelRewind\Facades\Rewind;
 
-// Undo the most recent change (move back one version)
-Rewind::undo($post);
+    // Rewind two versions back
+    Rewind::rewind($post, 2);
 
-// Redo the change (if you haven't modified the post in between)
-Rewind::redo($post);
+    // Fast-forward one version
+    Rewind::fastForward($post);
 
-// Jump directly to a specific version
-Rewind::goTo($post, 5);
-```
+    // Jump directly to a specific version
+    Rewind::goTo($post, 5);
+    ```
 
 ## Testing
 
