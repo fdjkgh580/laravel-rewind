@@ -95,9 +95,8 @@ it('does not create a new version if nothing changes on save', function () {
     $this->assertSame($originalVersionCount, RewindVersion::count());
 });
 
-it('can track only specified attributes if $rewindable is defined', function () {
-    // Here we assume that the Post model has:
-    // protected $rewindable = ['title'];
+it('ignores excluded attributes defined by the model', function () {
+    // Here we assume that the Post model has excluded the 'body' attribute
     // so that body changes won't be recorded.
 
     // Arrange
@@ -115,10 +114,10 @@ it('can track only specified attributes if $rewindable is defined', function () 
     $post->body = 'Updated Body';
     $post->save();
 
-    // Assert: No new version should be created if body is not in the $rewindable array
+    // Assert: No new version should be created
     $this->assertSame(1, $post->versions()->count());
 
-    // Act again: Update the title (which is in $rewindable)
+    // Act again: Update the title (which is not excluded)
     $post->title = 'Changed Title';
     $post->save();
 
