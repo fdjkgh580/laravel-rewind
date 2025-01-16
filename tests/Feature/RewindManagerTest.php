@@ -147,7 +147,7 @@ it('can jump to a specified version', function () {
     $this->assertSame(2, $post->current_version);
 
     // Act: Jump to version 1
-    Rewind::goToVersion($post, 1);
+    Rewind::goTo($post, 1);
 
     // Assert: The model should be reverted to the previous version
     $this->assertSame(1, $post->current_version);
@@ -155,7 +155,7 @@ it('can jump to a specified version', function () {
     $this->assertSame('Original Body', $post->body);
 
     // Act: Jump to version 2
-    Rewind::goToVersion($post, 2);
+    Rewind::goTo($post, 2);
 
     // Assert: The model should be back to the latest version
     $this->assertSame(2, $post->current_version);
@@ -177,7 +177,7 @@ it('throws an exception when jumping to a version that does not exist', function
     $this->assertSame(1, $post->current_version);
 
     // Act: Jump to version 2
-    Rewind::goToVersion($post, 2);
+    Rewind::goTo($post, 2);
 })->throws(VersionDoesNotExistException::class);
 
 it('creates a new version when running undo if record_rewinds is enabled', function () {
