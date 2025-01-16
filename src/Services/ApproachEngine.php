@@ -4,7 +4,6 @@ namespace AvocetShores\LaravelRewind\Services;
 
 use AvocetShores\LaravelRewind\Dto\ApproachPlan;
 use AvocetShores\LaravelRewind\Enums\ApproachMethod;
-use Illuminate\Database\Eloquent\Model;
 
 class ApproachEngine
 {
