@@ -5,19 +5,6 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Record Rewinds
-    |--------------------------------------------------------------------------
-    |
-    | By default, we will not store rewinds events (e.g. undo or redo) in the
-    | versions table. If you would like to store these events, you may
-    | enable this option. This can be overridden on a per-model basis using
-    | the shouldRecordRewinds method.
-    */
-
-    'record_rewinds' => false,
-
-    /*
-    |--------------------------------------------------------------------------
     | Rewind Versions Table Name
     |--------------------------------------------------------------------------
     |
