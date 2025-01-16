@@ -34,61 +34,60 @@ Rewind::goTo($post, $versions->first()->id);
 
 ## How It Works
 
-Under the hood, Rewind stores a combination of partial and full snapshots of your model’s data. The interval between 
+Under the hood, Rewind stores a combination of partial diffs and full snapshots of your model’s data. The interval between 
 full snapshots is determined by the `rewind.snapshot_interval` config value. This provides you with a customizable trade-off 
-between storage cost and performance. Our engine will automatically determine the shortest path between your current 
+between storage cost and performance. Rewind's engine will automatically determine the shortest path between your current 
 version, available snapshots, and your target.
 
-### How does Rewind handle history and branching?
+### How does Rewind handle history, and what about branching?
 
 Rewind maintains a simple linear history of your model’s changes, but what exactly happens when you update a model 
 while on an older version? Let's take a look:
 
-1. You create a new version of your model.
+1. You create a new version of your model:
 
-    ```php
-    // Previous title: 'Old Title'
-    $post->title = 'New Title';
-    $post->save();
-    ```
+```php
+// Previous title: 'Old Title'
+$post->title = 'New Title';
+$post->save();
+```
 
-2. You rewind to a previous version.
+2. You rewind to a previous version:
 
-    ```php
-    // Title goes back to 'Old Title'
-    Rewind::rewind($post);
-    ```
+```php
+// Title goes back to 'Old Title'
+Rewind::rewind($post);
+```
 
-3. You update the model *while on an older version*.
+3. You update the model *while on an older version*:
 
-   ```php
-   $post->title = 'Rewind is Awesome!';
-   $post->save();
-   ```
+```php
+$post->title = 'Rewind is Awesome!';
+$post->save();
+```
 
-4. What is the current version, and what's in it?
+4. What version are we on now, and what data is in it?
 
-    In order to maintain a linear, non-destructive history, Rewind uses the previous head version as the 
-    content of the `old_values` for the new version you just created. It also creates a full snapshot of the model’s 
-   current state and designates it as the new head. So the current version in our above example looks like this:
+In order to maintain a linear, non-destructive history, Rewind uses the previous head version as the 
+content of the `old_values` for the new version you just created. It also creates a full snapshot of the model’s 
+current state and designates it as the new head. So the current version in our above example looks like this:
 
-    ```php
-    [
-        'version' => 3,
-        'old_values' => [
-            'title' => 'New Title', // Note: This is the title from v2, not v1
-            // Other attributes...
-        ],
-        'new_values' => [
-            'title' => 'Rewind is Awesome!',
-            // Other attributes...
-        ],
-    ]
-    ```
+```php
+[
+    'version' => 3,
+    'old_values' => [
+        'title' => 'New Title', // Note: This is the title from v2, not v1
+        // Other attributes...
+    ],
+    'new_values' => [
+        'title' => 'Rewind is Awesome!',
+        // Other attributes...
+    ],
+]
+```
 
-In other words, your model's history always looks like you updated from the highest version. This way, you can always see 
-what changed between versions, even if you jump back and forth in time. And you can always revert to a previous 
-version without fear of losing data.
+In other words, your model's history will always look like it updated from the previous head version. This way, you can always see 
+what changed between versions, even if you jump back and forth in time. And you can always revert to a previous version without fear of losing data.
 
 ## Installation
 
@@ -108,7 +107,7 @@ php artisan migrate
 
 ## Getting Started
 
-To enable version tracking on a model:
+To enable version tracking on a model, follow these two steps:
 
 ### 1. Add the Rewindable trait to your Eloquent model:
 
@@ -121,18 +120,17 @@ class Post extends Model
 }
 ```
 
-### 2. Add the current_version column to your model’s table (optional):
+### 2. Add the `current_version` column to your model’s table:
 
-To unlock the full power of Rewind, you’ll need a way to track which version your model is 
-currently on. By default, Rewindable does not store a current version on your model’s table. To add it, you can use our 
-convenient artisan command to generate a migration:
+In order to function properly, Rewind needs to track which version your model is currently on. You can use our 
+convenient artisan command to generate a migration to do just that:
 
 ```bash
 php artisan rewind:add-version
 ```
 
 - This command will prompt you for the table name you wish to extend.  
-- After providing the table name, it creates a migration file that adds a current_version column to that table.
+- After providing the table name, it creates a migration file that will add a current_version column to that table.
 - Run `php artisan migrate` to apply it.  
 - Once this column is in place, the RewindManager will automatically manage your model’s current_version.
 
