@@ -2,7 +2,6 @@
 
 use AvocetShores\LaravelRewind\Models\RewindVersion;
 use AvocetShores\LaravelRewind\Tests\Models\Post;
-use AvocetShores\LaravelRewind\Tests\Models\PostWithoutRewindableAttributes;
 use AvocetShores\LaravelRewind\Tests\Models\PostWithExcludedAttributes;
 use AvocetShores\LaravelRewind\Tests\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
