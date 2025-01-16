@@ -57,19 +57,6 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Rewind Versions Table Model
-    |--------------------------------------------------------------------------
-    |
-    | Here you may define the model that represents the versions table.
-    | By default, it is set to "AvocetShores\LaravelRewind\Models\RewindVersion".
-    | You may override it via an environment variable or update this value directly.
-    |
-    */
-
-    'rewind_version_model' => env('LARAVEL_REWIND_VERSION_MODEL', AvocetShores\LaravelRewind\Models\RewindVersion::class),
-
-    /*
-    |--------------------------------------------------------------------------
     | Rewind Versions Table Connection
     |--------------------------------------------------------------------------
     |
