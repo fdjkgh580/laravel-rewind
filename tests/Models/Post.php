@@ -11,8 +11,6 @@ class Post extends Model
 
     protected $table = 'posts';
 
-    protected bool $rewindAll = true;
-
     protected $fillable = [
         'user_id',
         'title',

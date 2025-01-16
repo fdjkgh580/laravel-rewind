@@ -5,11 +5,9 @@ namespace AvocetShores\LaravelRewind\Tests\Models;
 use AvocetShores\LaravelRewind\Traits\Rewindable;
 use Illuminate\Database\Eloquent\Model;
 
-class PostWithoutRewindableAttributes extends Model
+class PostWithExcludedAttributes extends Model
 {
     use Rewindable;
-
-    // rewindAll and rewindable are not set
 
     protected $table = 'posts';
 
@@ -18,4 +16,9 @@ class PostWithoutRewindableAttributes extends Model
         'title',
         'body',
     ];
+
+    public static function excludeFromRewindable(): array
+    {
+        return ['body'];
+    }
 }

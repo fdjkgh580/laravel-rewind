@@ -20,7 +20,7 @@ beforeEach(function () {
     test()->actingAs($this->user);
 });
 
-it('rewinds a model to the previous version on undo', function () {
+it('rewinds a model to the previous version on rewind', function () {
     // Arrange
     $post = Post::create([
         'user_id' => $this->user->id,
@@ -40,8 +40,8 @@ it('rewinds a model to the previous version on undo', function () {
 
     $this->assertSame(2, $post->current_version);
 
-    // Act: Undo the last version
-    Rewind::undo($post);
+    // Act: Rewind the last version
+    Rewind::rewind($post);
 
     // Assert: The model should be reverted to the previous version
     $this->assertSame(1, $post->current_version);
@@ -49,7 +49,7 @@ it('rewinds a model to the previous version on undo', function () {
     $this->assertSame('Original Body', $post->body);
 });
 
-it('rewinds a model to the next version on redo', function () {
+it('rewinds a model to the next version on fast-forward', function () {
     // Arrange
     $post = Post::create([
         'user_id' => $this->user->id,
@@ -70,15 +70,15 @@ it('rewinds a model to the next version on redo', function () {
     $this->assertSame(2, $post->current_version);
 
     // Act: Undo the last version
-    Rewind::undo($post);
+    Rewind::rewind($post);
 
     // Assert: The model should be reverted to the previous version
     $this->assertSame(1, $post->current_version);
     $this->assertSame('Original Title', $post->title);
     $this->assertSame('Original Body', $post->body);
 
-    // Act: Redo the last version
-    Rewind::redo($post);
+    // Act: Fast-forward the last version
+    Rewind::fastForward($post);
 
     // Assert: The model should be reverted to the next version
     $this->assertSame(2, $post->current_version);
@@ -107,7 +107,7 @@ it('creates a new max version when a model is updated while on a previous versio
     $this->assertSame(2, $post->current_version);
 
     // Act: Undo the last version
-    Rewind::undo($post);
+    Rewind::rewind($post);
 
     // Assert: The model should be reverted to the previous version
     $this->assertSame(1, $post->current_version);
@@ -147,7 +147,7 @@ it('can jump to a specified version', function () {
     $this->assertSame(2, $post->current_version);
 
     // Act: Jump to version 1
-    Rewind::goToVersion($post, 1);
+    Rewind::goTo($post, 1);
 
     // Assert: The model should be reverted to the previous version
     $this->assertSame(1, $post->current_version);
@@ -155,11 +155,125 @@ it('can jump to a specified version', function () {
     $this->assertSame('Original Body', $post->body);
 
     // Act: Jump to version 2
-    Rewind::goToVersion($post, 2);
+    Rewind::goTo($post, 2);
 
     // Assert: The model should be back to the latest version
     $this->assertSame(2, $post->current_version);
     $this->assertSame('Updated Title', $post->title);
+    $this->assertSame('Updated Body', $post->body);
+});
+
+it('can handle complex version history and goTo calls', function () {
+    // Set config to snapshot every 5 versions
+    config(['rewind.snapshot_interval' => 5]);
+
+    $post = Post::create([
+        'user_id' => $this->user->id,
+        'title' => 'Original Title',
+        'body' => 'Original Body',
+    ]);
+    $post->refresh();
+
+    $this->assertDatabaseHas('rewind_versions', [
+        'model_id' => $post->id,
+        'version' => 1,
+        'old_values' => json_encode([
+            'user_id' => null,
+            'title' => null,
+            'body' => null,
+        ]),
+        'new_values' => json_encode([
+            'user_id' => $this->user->id,
+            'title' => 'Original Title',
+            'body' => 'Original Body',
+        ]),
+        'is_snapshot' => 1,
+    ]);
+
+    $post->update([
+        'title' => 'Updated Title',
+    ]);
+
+    $this->assertSame(2, $post->current_version);
+    $version2 = $post->versions()->where('version', 2)->first();
+    $this->assertNotNull($version2);
+    $this->assertSame($version2->new_values['title'], $post->title);
+    $this->assertArrayNotHasKey('body', $version2->new_values);
+    $this->assertArrayNotHasKey('body', $version2->old_values);
+
+    $post->update([
+        'body' => 'Updated Body',
+    ]);
+
+    $this->assertSame(3, $post->current_version);
+    $version3 = $post->versions()->where('version', 3)->first();
+    $this->assertNotNull($version3);
+    $this->assertSame($version3->new_values['body'], $post->body);
+
+    Rewind::goTo($post, 1);
+
+    $this->assertSame(1, $post->current_version);
+    $this->assertSame('Original Title', $post->title);
+    $this->assertSame('Original Body', $post->body);
+
+    // Now make a new change, which should create a new version
+    $post->update([
+        'title' => 'Updated Title Again',
+    ]);
+
+    $this->assertSame(4, $post->current_version);
+    $this->assertSame('Updated Title Again', $post->title);
+    $this->assertSame('Original Body', $post->body);
+
+    // Now rewind, which will actually take us back to version 3
+    Rewind::rewind($post);
+
+    $this->assertSame(3, $post->current_version);
+    $this->assertSame('Updated Title', $post->title);
+    $this->assertSame('Updated Body', $post->body);
+
+    // Now fast-forward, which will take us back to version 4
+    Rewind::fastForward($post);
+
+    $post->update([
+        'title' => 'Updated Title Yet Again',
+    ]);
+
+    $this->assertSame(5, $post->current_version);
+    $version5 = $post->versions()->where('version', 5)->first();
+    $this->assertNotNull($version5);
+    $this->assertSame($version5->new_values['title'], $post->title);
+    $this->assertTrue($version5->is_snapshot);
+    $this->assertSame($version5->new_values['body'], $post->body);
+    $this->assertSame($version5->new_values['user_id'], $this->user->id);
+
+    $post->update([
+        'body' => 'Updated Body Again',
+    ]);
+
+    $this->assertSame(6, $post->current_version);
+
+    $post->update([
+        'title' => 'Updated Title One More Time',
+    ]);
+
+    // Snapshot is a closer walk than direct, so this should jump from v5 down to v4
+    Rewind::goTo($post, 4);
+
+    $this->assertSame(4, $post->current_version);
+    $this->assertSame('Updated Title Again', $post->title);
+    $this->assertSame('Original Body', $post->body);
+
+    Rewind::rewind($post);
+
+    // Now make a final change
+    $post->update([
+        'title' => 'Updated Title One Last Time',
+    ]);
+
+    $finalVersion = $post->versions()->orderBy('version', 'desc')->first();
+    $this->assertSame(8, $post->current_version);
+    $this->assertSame('Updated Title One Last Time', $post->title);
     $this->assertSame('Updated Body', $post->body);
 });
 
@@ -177,12 +291,10 @@ it('throws an exception when jumping to a version that does not exist', function
     $this->assertSame(1, $post->current_version);
 
     // Act: Jump to version 2
-    Rewind::goToVersion($post, 2);
+    Rewind::goTo($post, 2);
 })->throws(VersionDoesNotExistException::class);
 
-it('creates a new version when running undo if record_rewinds is enabled', function () {
-    app()->config->set('rewind.record_rewinds', true);
-
+it('throws an exception when we try to rewind before version 1', function () {
     // Arrange
     $post = Post::create([
         'user_id' => $this->user->id,
@@ -195,29 +307,23 @@ it('creates a new version when running undo if record_rewinds is enabled', funct
     // Assert the model has current_version set to 1
     $this->assertSame(1, $post->current_version);
 
-    $post->update([
-        'title' => 'Updated Title',
-        'body' => 'Updated Body',
+    // Act: Rewind the last version
+    Rewind::rewind($post);
+})->throws(VersionDoesNotExistException::class);
+
+it('throws an exception when we try to fast-forward past the latest version', function () {
+    // Arrange
+    $post = Post::create([
+        'user_id' => $this->user->id,
+        'title' => 'Original Title',
+        'body' => 'Original Body',
     ]);
 
-    $this->assertSame(2, $post->current_version);
+    $post->refresh();
 
-    // Act: Undo the last version
-    Rewind::undo($post);
-
-    // Assert: The model should be reverted to the previous version
+    // Assert the model has current_version set to 1
     $this->assertSame(1, $post->current_version);
-    $this->assertSame('Original Title', $post->title);
-    $this->assertSame('Original Body', $post->body);
 
-    // Assert: A new version should be created
-    $this->assertSame(3, $post->versions()->max('version'));
-
-    // Assert all versions are attributed to the user
-    $this->assertSame(3, $post->versions()->where('user_id', $this->user->id)->count());
-
-    // Assert each of the versions' user() relationship is the user
-    $post->versions->load('user')->each(function ($version) {
-        $this->assertSame($this->user->id, $version->user->id);
-    });
-});
+    // Act: Fast-forward the last version
+    Rewind::fastForward($post);
+})->throws(VersionDoesNotExistException::class);

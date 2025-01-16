@@ -5,19 +5,6 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Record Rewinds
-    |--------------------------------------------------------------------------
-    |
-    | By default, we will not store rewinds events (e.g. undo or redo) in the
-    | versions table. If you would like to store these events, you may
-    | enable this option. This can be overridden on a per-model basis using
-    | the shouldRecordRewinds method.
-    */
-
-    'record_rewinds' => false,
-
-    /*
-    |--------------------------------------------------------------------------
     | Rewind Versions Table Name
     |--------------------------------------------------------------------------
     |
@@ -57,19 +44,6 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Rewind Versions Table Model
-    |--------------------------------------------------------------------------
-    |
-    | Here you may define the model that represents the versions table.
-    | By default, it is set to "AvocetShores\LaravelRewind\Models\RewindVersion".
-    | You may override it via an environment variable or update this value directly.
-    |
-    */
-
-    'rewind_version_model' => env('LARAVEL_REWIND_VERSION_MODEL', AvocetShores\LaravelRewind\Models\RewindVersion::class),
-
-    /*
-    |--------------------------------------------------------------------------
     | Rewind Versions Table Connection
     |--------------------------------------------------------------------------
     |
@@ -96,14 +70,17 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Default to Tracking All Attributes
+    | Snapshot Interval
     |--------------------------------------------------------------------------
     |
-    | If this is set to true, any model using the Rewindable trait will track
-    | all of its attributes by default. You can still override by specifying
-    | $rewindable or $rewindAll on individual models.
+    | Here you may define the interval between versions that should be stored
+    | as a full snapshot. By default, it is set to 10, but you may adjust
+    | this value to suit your application's needs. Higher values reduce
+    | the amount of data stored at the cost of longer traversal times.
+    |
+    | **Set this to a high value if you only intend on using undo/redo.**
     |
     */
 
-    'tracks_all_by_default' => true,
+    'snapshot_interval' => env('LARAVEL_REWIND_SNAPSHOT_INTERVAL', 10),
 ];

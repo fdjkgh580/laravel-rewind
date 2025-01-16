@@ -2,9 +2,10 @@
 
 namespace AvocetShores\LaravelRewind\Services;
 
+use AvocetShores\LaravelRewind\Enums\ApproachMethod;
 use AvocetShores\LaravelRewind\Exceptions\LaravelRewindException;
 use AvocetShores\LaravelRewind\Exceptions\VersionDoesNotExistException;
-use AvocetShores\LaravelRewind\LaravelRewindServiceProvider;
+use AvocetShores\LaravelRewind\Models\RewindVersion;
 use AvocetShores\LaravelRewind\Traits\Rewindable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
@@ -12,62 +13,36 @@ use Illuminate\Support\Facades\Schema;
 
 class RewindManager
 {
+    public function __construct(
+        protected ApproachEngine $approachEngine,
+    ) {}
+
     /**
-     * Undo the most recent change by jumping from current_version
-     * to the previous version, if any.
+     * Rewind by a specified number of steps.
      *
      * @throws LaravelRewindException
      */
-    public function undo($model): bool
+    public function rewind($model, int $steps = 1): void
     {
         $this->assertRewindable($model);
 
-        // Identify the model's actual current version
-        $currentVersion = $this->determineCurrentVersion($model);
+        $targetVersion = $this->determineCurrentVersion($model) - $steps;
 
-        if ($currentVersion <= 1) {
-            // If the model is at version 0 or 1, there’s nothing to undo back to
-            return false;
-        }
-
-        // Find the previous version
-        $previousVersion = $model->versions()
-            ->where('version', '<', $currentVersion)
-            ->orderBy('version', 'desc')
-            ->first();
-
-        if (! $previousVersion) {
-            return false;
-        }
-
-        // Apply the version for the previous version
-        return $this->applyVersion($model, $previousVersion->version);
+        $this->goTo($model, $targetVersion);
     }
 
     /**
-     * Fast-forward (redo) to the next version, if one exists.
+     * Fast-forward by a specified number of steps.
      *
      * @throws LaravelRewindException
      */
-    public function redo($model): bool
+    public function fastForward($model, int $steps = 1): void
     {
         $this->assertRewindable($model);
 
-        // Identify the model's actual current version
-        $currentVersion = $this->determineCurrentVersion($model);
+        $targetVersion = $this->determineCurrentVersion($model) + $steps;
 
-        // Find the next higher version
-        $nextVersion = $model->versions()
-            ->where('version', '>', $currentVersion)
-            ->orderBy('version', 'asc')
-            ->first();
-
-        if (! $nextVersion) {
-            return false;
-        }
-
-        // Apply the next version
-        return $this->applyVersion($model, $nextVersion->version);
+        $this->goTo($model, $targetVersion);
     }
 
     /**
@@ -75,84 +50,153 @@ class RewindManager
      *
      * @throws LaravelRewindException
      */
-    public function goToVersion($model, int $version): bool
+    public function goTo($model, int $targetVersion): void
     {
         $this->assertRewindable($model);
+        $this->eagerLoadVersions($model);
 
         // Validate the target version
-        $version = $model->versions()->where('version', $version)->first();
-        if (! $version) {
+        $targetModel = $model->versions->where('version', $targetVersion)->first();
+        if (! $targetModel) {
             throw new VersionDoesNotExistException('The specified version does not exist.');
         }
 
-        // Apply the version
-        return $this->applyVersion($model, $version->version);
+        // Identify the model's current version
+        $currentVersion = $this->determineCurrentVersion($model);
+
+        // Run the approach engine to determine the best way to get to the target version
+        $bestApproach = $this->approachEngine->run($model, $currentVersion, $targetVersion);
+
+        // Apply the best approach
+        switch ($bestApproach->method) {
+            case ApproachMethod::None:
+                // No action needed
+                break;
+            case ApproachMethod::Direct:
+                $this->applyDiffs($model, $currentVersion, $targetVersion);
+                break;
+            case ApproachMethod::From_Snapshot:
+                $this->applyDiffsFromSnapshot($model, $bestApproach->snapshot, $targetVersion);
+                break;
+        }
+    }
+
+    protected function applyDiffsFromSnapshot(Model $model, RewindVersion $snapshotRecord, int $targetVersion): void
+    {
+        // Apply snapshot without saving to reduce the number of save operations
+        $this->applySnapshot($model, $snapshotRecord);
+
+        $this->applyDiffs($model, $snapshotRecord->version, $targetVersion);
     }
 
     /**
-     * Core function to apply the state of a version to the model.
-     * Optionally create a new version if config or the model says so.
+     * Apply partial diffs in reverse or forward from currentVersion to targetVersion.
      *
-     * @throws LaravelRewindException
+     * Example: If you're at version 10 and want to go to version 7, you'll:
+     *  - get diff for v10, revert it,
+     *  - then v9, revert it,
+     *  - then v8, revert it,
+     *  - stopping once we reach v7.
      */
-    protected function applyVersion($model, int $targetVersion): bool
+    protected function applyDiffs($model, int $currentVersion, int $targetVersion): void
     {
-        // First, make sure the model implements the Rewindable trait
-        $this->assertRewindable($model);
+        $this->eagerLoadVersions($model);
 
-        $versionToApply = $model->versions()->where('version', $targetVersion)->first();
-        if (! $versionToApply) {
-            throw new VersionDoesNotExistException('The specified version does not exist.');
+        DB::transaction(function () use ($model, $currentVersion, $targetVersion) {
+
+            if ($currentVersion > $targetVersion) {
+                // Step downward from currentVersion-1 until targetVersion
+                for ($ver = $currentVersion; $ver > $targetVersion; $ver--) {
+                    $versionRec = $model->versions
+                        ->where('version', $ver)
+                        ->first();
+
+                    // If there's no partial diff for $ver (e.g. it doesn't exist), skip
+                    if (! $versionRec) {
+                        continue;
+                    }
+
+                    // Reverse the partial diff by applying "old_values"
+                    $this->applyPartialDiffReverse($model, $versionRec);
+                }
+            } else {
+                // Step upward from currentVersion+1 until targetVersion
+                for ($ver = $currentVersion + 1; $ver <= $targetVersion; $ver++) {
+                    $versionRec = $model->versions
+                        ->where('version', $ver)
+                        ->where('is_snapshot', false)
+                        ->first();
+
+                    // If there's no partial diff for $ver (e.g. if it was a snapshot or doesn't exist), skip
+                    if (! $versionRec) {
+                        continue;
+                    }
+
+                    // Apply the partial diff
+                    $this->applyPartialDiff($model, $versionRec);
+                }
+            }
+
+            $this->updateModelVersion($model, $targetVersion);
+
+        });
+    }
+
+    /**
+     * Update the model's current_version to the specified version without triggering Rewind events
+     */
+    protected function updateModelVersion($model, int $version): void
+    {
+        if (! $this->modelHasCurrentVersionColumn($model)) {
+            return;
         }
 
-        // Prepare the new_values to be applied to the model
-        $attributes = $versionToApply->new_values ?: [];
+        $model->disableRewindEvents();
 
-        // Determine if we want to log a new version for this revert/redo action
-        $shouldRecordRewind = config('rewind.record_rewinds', false)
-            || (method_exists($model, 'shouldRecordRewinds') && $model->shouldRecordRewinds());
+        $model->current_version = $version;
+        $model->save();
 
-        // Capture the model's current state so we can store it as old_values if we create a version
-        $previousModelState = $model->attributesToArray();
+        $model->enableRewindEvents();
+    }
 
-        DB::transaction(function () use ($model, $attributes, $shouldRecordRewind, $previousModelState, $versionToApply) {
-            // Temporarily disable normal Rewindable event handling
-            $model->disableRewindEvents();
+    protected function applyPartialDiff($model, $versionRec): void
+    {
+        $newValues = $versionRec->new_values;
 
-            // Update the model’s attributes to the "target" version state
-            foreach ($attributes as $key => $value) {
-                $model->setAttribute($key, $value);
-            }
+        foreach ($newValues as $key => $value) {
+            $model->setAttribute($key, $value);
+        }
+    }
 
-            // Save the new current_version if the model has the column
-            if ($this->modelHasCurrentVersionColumn($model)) {
-                $model->current_version = $versionToApply->version;
-            }
+    /**
+     * Reverse partial diff means we set the model's attributes to "old_values"
+     * which represent the state before that version was applied.
+     */
+    protected function applyPartialDiffReverse($model, $versionRec): void
+    {
+        $oldValues = $versionRec->old_values;
 
+        foreach ($oldValues as $key => $value) {
+            $model->setAttribute($key, $value);
+        }
+    }
+
+    /**
+     * Apply a snapshot (full new_values).
+     * Optionally save the model after applying the snapshot.
+     */
+    protected function applySnapshot($model, RewindVersion $snapshotRecord, bool $shouldSave = false): void
+    {
+        $model->disableRewindEvents();
+        foreach (($snapshotRecord->new_values ?? []) as $key => $value) {
+            $model->setAttribute($key, $value);
+        }
+
+        if ($shouldSave) {
             $model->save();
+        }
 
-            // Re-enable normal event handling
-            $model->enableRewindEvents();
-
-            // If desired, create a new version capturing the revert/redo event
-            if ($shouldRecordRewind) {
-                $rewindModelClass = LaravelRewindServiceProvider::determineRewindVersionModel();
-                $nextVersion = ($model->versions()->max('version') ?? 0) + 1;
-
-                $rewindModelClass::create([
-                    'model_type' => get_class($model),
-                    'model_id' => $model->getKey(),
-                    'old_values' => $previousModelState,
-                    'new_values' => $attributes,
-                    'version' => $nextVersion,
-                    config('rewind.user_id_column') => $model->getRewindTrackUser(),
-                ]);
-
-                // We do not update the current_version column here, as that would disable the ability to "redo" back to the current state
-            }
-        });
-
-        return true;
+        $model->enableRewindEvents();
     }
 
     /**
@@ -182,6 +226,11 @@ class RewindManager
         if (collect(class_uses_recursive($model::class))->doesntContain(Rewindable::class)) {
             throw new LaravelRewindException('Model must use the Rewindable trait to be rewound.');
         }
+    }
+
+    protected function eagerLoadVersions(Model $model): void
+    {
+        $model->load('versions');
     }
 
     /**

@@ -2,8 +2,7 @@
 
 use AvocetShores\LaravelRewind\Models\RewindVersion;
 use AvocetShores\LaravelRewind\Tests\Models\Post;
-use AvocetShores\LaravelRewind\Tests\Models\PostWithoutRewindableAttributes;
-use AvocetShores\LaravelRewind\Tests\Models\PostWithRewindableAttributes;
+use AvocetShores\LaravelRewind\Tests\Models\PostWithExcludedAttributes;
 use AvocetShores\LaravelRewind\Tests\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
@@ -95,13 +94,12 @@ it('does not create a new version if nothing changes on save', function () {
     $this->assertSame($originalVersionCount, RewindVersion::count());
 });
 
-it('can track only specified attributes if $rewindable is defined', function () {
-    // Here we assume that the Post model has:
-    // protected $rewindable = ['title'];
+it('ignores excluded attributes defined by the model', function () {
+    // Here we assume that the Post model has excluded the 'body' attribute
     // so that body changes won't be recorded.
 
     // Arrange
-    $post = PostWithRewindableAttributes::create([
+    $post = PostWithExcludedAttributes::create([
         'user_id' => $this->user->id,
         'title' => 'Tracked Title',
         'body' => 'Untracked Body',
@@ -111,14 +109,14 @@ it('can track only specified attributes if $rewindable is defined', function () 
     $this->assertSame(1, $post->versions()->count());
 
     // Act: Get new post from db and update only the body
-    $post = PostWithRewindableAttributes::find($post->id);
+    $post = PostWithExcludedAttributes::find($post->id);
     $post->body = 'Updated Body';
     $post->save();
 
-    // Assert: No new version should be created if body is not in the $rewindable array
+    // Assert: No new version should be created
     $this->assertSame(1, $post->versions()->count());
 
-    // Act again: Update the title (which is in $rewindable)
+    // Act again: Update the title (which is not excluded)
     $post->title = 'Changed Title';
     $post->save();
 
@@ -160,52 +158,4 @@ it('does not record a version if disableRewindEvents is set to true before savin
 
     // Assert: No new version was created
     $this->assertSame(1, RewindVersion::count());
-});
-
-it('stores all attributes when the tracks all by default config is set', function () {
-    // Arrange
-    config()->set('rewind.tracks_all_by_default', true);
-
-    $post = PostWithoutRewindableAttributes::create([
-        'user_id' => $this->user->id,
-        'title' => 'First Title',
-        'body' => 'First Body',
-    ]);
-    $this->assertSame(1, RewindVersion::count());
-
-    $post->refresh();
-
-    // Act: Update the post
-    $post->title = 'Second Title';
-    $post->body = 'Second Body';
-    $post->save();
-
-    // Assert: The new version should have both title and body
-    $latestVersion = RewindVersion::orderBy('id', 'desc')->first();
-    expect($latestVersion->new_values)->toMatchArray([
-        'title' => 'Second Title',
-        'body' => 'Second Body',
-    ]);
-});
-
-it('can disable tracking all attributes by default', function () {
-    // Arrange
-    config()->set('rewind.tracks_all_by_default', false);
-
-    $post = PostWithoutRewindableAttributes::create([
-        'user_id' => $this->user->id,
-        'title' => 'First Title',
-        'body' => 'First Body',
-    ]);
-    $this->assertSame(0, RewindVersion::count());
-
-    $post->refresh();
-
-    // Act: Update the post
-    $post->title = 'Second Title';
-    $post->body = 'Second Body';
-    $post->save();
-
-    // There should be no new version created
-    $this->assertSame(0, RewindVersion::count());
 });

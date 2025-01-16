@@ -2,10 +2,9 @@
 
 namespace AvocetShores\LaravelRewind\Traits;
 
-use AvocetShores\LaravelRewind\Exceptions\InvalidConfigurationException;
-use AvocetShores\LaravelRewind\LaravelRewindServiceProvider;
 use AvocetShores\LaravelRewind\Models\RewindVersion;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
 
 /**
@@ -20,6 +19,24 @@ use Illuminate\Support\Facades\Auth;
 trait Rewindable
 {
     protected bool $disableRewindEvents = false;
+
+    protected function getExcludedRewindableAttributes(): array
+    {
+        // Merge the default exclusions with any custom exclusions
+        $defaultExclusions = [
+            $this->getKeyName(),
+            'created_at',
+            'updated_at',
+            'current_version',
+        ];
+
+        return array_unique(array_merge($defaultExclusions, $this->excludeFromRewindable()));
+    }
+
+    public static function excludeFromRewindable(): array
+    {
+        return [];
+    }
 
     /**
      * Boot the trait. Registers relevant event listeners.
@@ -51,10 +68,25 @@ trait Rewindable
             ->where('model_type', static::class);
     }
 
+    protected function rebuildHeadVersion(): array
+    {
+        $data = [];
+        $this->load('versions');
+        $lastSnapshot = $this->versions()->where('is_snapshot', true)->latest('version')->first();
+        if ($lastSnapshot) {
+            $data = $lastSnapshot->new_values;
+        }
+
+        // Loop through all versions since the last snapshot
+        $this->versions()->where('version', '>', $lastSnapshot->version)->orderBy('version')->each(function ($version) use (&$data) {
+            $data = array_merge($data, $version->new_values);
+        });
+
+        return $data;
+    }
+
     /**
      * Capture the difference between old and new values, and store them in the database.
-     *
-     * @throws InvalidConfigurationException
      */
     protected function recordVersion(): void
     {
@@ -72,15 +104,28 @@ trait Rewindable
         $oldValues = [];
         $newValues = [];
 
+        // Get the next version number for this model
+        $nextVersion = ($this->versions()->max('version') ?? 0) + 1;
+
+        // If our current version is not the head, we need to rebuild the head record, then store all of its trackable attributes as old_values.
+        // We then store the new values as the current model attributes, and set it to be a snapshot
+        $isSnapshot = false;
+        if ($this->current_version && $this->current_version !== $nextVersion - 1) {
+            $isSnapshot = true;
+            $oldValues = $this->rebuildHeadVersion();
+        }
+
         // For each attribute to track, see if it changed (or if creating/deleting)
         foreach ($attributesToTrack as $attribute) {
-            // If the model was just created, there's no "old" value,
-            // but let's check the original if it exists.
-            $originalValue = $this->getOriginal($attribute);
+
+            // Use the head values from earlier if we're not at the head
+            isset($oldValues[$attribute]) ?
+                $originalValue = $oldValues[$attribute] :
+                $originalValue = $this->getOriginal($attribute);
 
             // If the attribute is truly changed, or if wasRecentlyCreated/wasDeleted
             if (
-                $this->wasRecentlyCreated
+                ($this->wasRecentlyCreated && empty($originalValue))
                 || $this->wasDeleted()
                 || array_key_exists($attribute, $dirty)
             ) {
@@ -94,20 +139,27 @@ trait Rewindable
             return;
         }
 
-        // Get the next version number for this model
-        $nextVersion = ($this->versions()->max('version') ?? 0) + 1;
+        // Determine if we should create a full snapshot
+        $interval = config('rewind.snapshot_interval', 10);
+        if (! $isSnapshot) {
+            $isSnapshot = ($nextVersion % $interval === 0) || $nextVersion === 1;
+        }
 
-        // Create the version record using the configured model.
-        $modelClass = LaravelRewindServiceProvider::determineRewindVersionModel();
+        if ($isSnapshot) {
+            $allAttributes = $this->getAttributes();
+            // Filter down to our rewindable attributes
+            $newValues = Arr::only($allAttributes, $attributesToTrack);
+        }
 
         // Create a new version record
-        $modelClass::create([
+        RewindVersion::create([
             'model_type' => static::class,
             'model_id' => $this->getKey(),
             'old_values' => $oldValues ?: null,
             'new_values' => $newValues ?: null,
             'version' => $nextVersion,
             config('rewind.user_id_column') => $this->getRewindTrackUser(),
+            'is_snapshot' => $isSnapshot,
         ]);
 
         // Update the current_version column if it exists
@@ -131,28 +183,11 @@ trait Rewindable
      */
     protected function getRewindableAttributes(): array
     {
-        // If the model has $rewindAll set to true, track all
-        if (property_exists($this, 'rewindAll') && $this->rewindAll) {
-            return array_keys($this->getAttributes());
-        }
-
-        // Otherwise, if a $rewindable array is defined, use it
-        if (property_exists($this, 'rewindable') && is_array($this->rewindable)) {
-            return $this->rewindable;
-        }
-
-        // If the package config is set to track all by default
-        // and the model doesn't override that, track all
-        if (
-            config('rewind.tracks_all_by_default') &&
-            ! property_exists($this, 'rewindable')
-        ) {
-            return array_keys($this->getAttributes());
-        }
-
-        // If none of the above, default to an empty array
-        // meaning we don't track anything on this model
-        return [];
+        // Track everything except timestamps, primary key, and current_version
+        return array_keys(Arr::except(
+            $this->getAttributes(),
+            $this->getExcludedRewindableAttributes()
+        ));
     }
 
     /**

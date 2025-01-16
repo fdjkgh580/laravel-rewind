@@ -5,6 +5,9 @@ namespace AvocetShores\LaravelRewind\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * @property int $version
+ */
 class RewindVersion extends Model
 {
     /**
@@ -16,6 +19,7 @@ class RewindVersion extends Model
         'old_values',
         'new_values',
         'version',
+        'is_snapshot',
     ];
 
     /**
@@ -25,6 +29,7 @@ class RewindVersion extends Model
         'old_values' => 'array',
         'new_values' => 'array',
         'version' => 'integer',
+        'is_snapshot' => 'boolean',
     ];
 
     /**
