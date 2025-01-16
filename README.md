@@ -41,7 +41,7 @@ version, available snapshots, and your target.
 
 ### How does Rewind handle history and branching?
 
-Rewind tries to maintain a simple linear history of your model’s changes. But what happens when you update a model 
+Rewind maintains a simple linear history of your model’s changes, but what exactly happens when you update a model 
 while on an older version? Let's take a look:
 
 1. You create a new version of your model.
@@ -69,14 +69,14 @@ while on an older version? Let's take a look:
 4. What is the current version, and what's in it?
 
     In order to maintain a linear, non-destructive history, Rewind uses the previous head version as the 
-    content for `old_values` for the new version you just created, while creating a full snapshot of the model’s current state and making it the new 
-    head. So the current version looks like this:
+    content of the `old_values` for the new version you just created. It also creates a full snapshot of the model’s 
+   current state and designates it as the new head. So the current version in our above example looks like this:
 
     ```php
     [
         'version' => 3,
         'old_values' => [
-            'title' => 'New Title',
+            'title' => 'New Title', // Note: This is the title from v2, not v1
             // Other attributes...
         ],
         'new_values' => [
@@ -87,7 +87,8 @@ while on an older version? Let's take a look:
     ```
 
 In other words, your model's history always looks like you updated from the highest version. This way, you can always see 
-what changed between versions, even if you jump back and forth in time. And you can always revert to a previous version without losing any data.
+what changed between versions, even if you jump back and forth in time. And you can always revert to a previous 
+version without fear of losing data.
 
 ## Installation
 
