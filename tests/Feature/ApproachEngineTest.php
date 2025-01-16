@@ -58,7 +58,7 @@ function makeMockModel(array $versions, bool $relationIsLoaded = true): Model
 }
 
 beforeEach(function () {
-    $this->engine = new ApproachEngine();
+    $this->engine = new ApproachEngine;
 });
 
 test('returns ApproachMethod::None if currentVersion == targetVersion', function () {
@@ -209,7 +209,7 @@ test('snapshot ahead is cheaper than a direct backward approach', function () {
 
     $model = makeMockModel($versions);
 
-    $plan = (new ApproachEngine())->run($model, 17, 5);
+    $plan = (new ApproachEngine)->run($model, 17, 5);
 
     expect($plan)->toBeInstanceOf(ApproachPlan::class)
         ->and($plan->method)->toBe(ApproachMethod::From_Snapshot)

@@ -3,7 +3,6 @@
 namespace AvocetShores\LaravelRewind\Traits;
 
 use AvocetShores\LaravelRewind\Exceptions\InvalidConfigurationException;
-use AvocetShores\LaravelRewind\LaravelRewindServiceProvider;
 use AvocetShores\LaravelRewind\Models\RewindVersion;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Arr;
@@ -21,7 +20,6 @@ use Illuminate\Support\Facades\Auth;
 trait Rewindable
 {
     protected bool $disableRewindEvents = false;
-
 
     protected function getExcludedRewindableAttributes(): array
     {

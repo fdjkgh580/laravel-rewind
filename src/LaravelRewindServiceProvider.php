@@ -3,10 +3,7 @@
 namespace AvocetShores\LaravelRewind;
 
 use AvocetShores\LaravelRewind\Commands\AddVersionTrackingColumnCommand;
-use AvocetShores\LaravelRewind\Exceptions\InvalidConfigurationException;
-use AvocetShores\LaravelRewind\Models\RewindVersion;
 use AvocetShores\LaravelRewind\Services\RewindManager;
-use Illuminate\Database\Eloquent\Model;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
 
