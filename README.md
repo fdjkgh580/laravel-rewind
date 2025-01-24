@@ -29,7 +29,7 @@ You can also view a list of previous versions of a model, see what changed, and 
 ```php
 $versions = $post->versions;
 
-Rewind::goTo($post, $versions->first()->id);
+Rewind::goTo($post, $versions->first()->version);
 ```
 
 ## How It Works
