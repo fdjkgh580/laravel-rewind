@@ -13,14 +13,14 @@ Imagine you have a Post model and want to track how it evolves over time:
 ```php
 use AvocetShores\LaravelRewind\Facades\Rewind;
 
-// Update the post, creating a new version
+// Previous title: 'Old Title'
 $post->title = 'Updated Title';
 $post->save();
 
-// Let's go back in time
+// Title goes back to 'Old Title'
 Rewind::rewind($post);
 
-// Or fast-forward
+// Title goes forward to 'Updated Title'
 Rewind::fastForward($post);
 ```
 
@@ -105,7 +105,7 @@ composer require avocet-shores/laravel-rewind
 You can publish and run the migrations, and publish the config, with:
 
 ```bash
-sail artisan vendor:publish --provider="AvocetShores\LaravelRewind\LaravelRewindServiceProvider"
+php artisan vendor:publish --provider="AvocetShores\LaravelRewind\LaravelRewindServiceProvider"
 
 php artisan migrate
 ```

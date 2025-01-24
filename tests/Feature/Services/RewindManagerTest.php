@@ -1,11 +1,13 @@
 <?php
 
+use AvocetShores\LaravelRewind\Exceptions\CurrentVersionColumnMissingException;
 use AvocetShores\LaravelRewind\Exceptions\ModelNotRewindableException;
 use AvocetShores\LaravelRewind\Exceptions\VersionDoesNotExistException;
 use AvocetShores\LaravelRewind\Facades\Rewind;
 use AvocetShores\LaravelRewind\Tests\Models\Post;
 use AvocetShores\LaravelRewind\Tests\Models\PostThatIsNotRewindable;
 use AvocetShores\LaravelRewind\Tests\Models\User;
+use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
@@ -446,3 +448,53 @@ it('throws an exception when the model is not rewindable', function () {
     // Act: Rewind the last version
     Rewind::rewind($post);
 })->throws(ModelNotRewindableException::class);
+
+it('throws an exception when the table does not have a current_version column', function () {
+    // Arrange
+    $post = Post::create([
+        'user_id' => $this->user->id,
+        'title' => 'Original Title',
+        'body' => 'Original Body',
+    ]);
+
+    $post->update([
+        'title' => 'Updated Title',
+        'body' => 'Updated Body',
+    ]);
+
+    // Remove the current_version column
+    Schema::table('posts', function (Blueprint $table) {
+        $table->dropColumn('current_version');
+    });
+
+    // Act: Rewind the last version
+    Rewind::rewind($post);
+})->throws(CurrentVersionColumnMissingException::class);
+
+const CURRENT_VERSION_CACHE_KEY = 'rewind:tables:%s:has_current_version';
+
+it('caches when a table has the current_version column', function () {
+
+    // Mock the cache
+    $mock = Cache::spy();
+
+    $mock->shouldReceive('lock')->andReturnSelf();
+    $mock->shouldReceive('has')->once()->andReturn(false);
+    $mock->shouldReceive('has')->andReturn(true);
+    $mock->shouldReceive('put')->once();
+
+    // Arrange
+    $post = Post::create([
+        'user_id' => $this->user->id,
+        'title' => 'Original Title',
+        'body' => 'Original Body',
+    ]);
+
+    $post->update([
+        'title' => 'Updated Title',
+        'body' => 'Updated Body',
+    ]);
+
+    // Act: Rewind the last version
+    Rewind::rewind($post);
+});

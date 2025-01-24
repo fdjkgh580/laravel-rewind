@@ -3,6 +3,7 @@
 namespace AvocetShores\LaravelRewind\Services;
 
 use AvocetShores\LaravelRewind\Enums\ApproachMethod;
+use AvocetShores\LaravelRewind\Exceptions\CurrentVersionColumnMissingException;
 use AvocetShores\LaravelRewind\Exceptions\LaravelRewindException;
 use AvocetShores\LaravelRewind\Exceptions\ModelNotRewindableException;
 use AvocetShores\LaravelRewind\Exceptions\VersionDoesNotExistException;
@@ -10,6 +11,7 @@ use AvocetShores\LaravelRewind\Models\RewindVersion;
 use AvocetShores\LaravelRewind\Traits\Rewindable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Schema;
 
 class RewindManager
@@ -61,6 +63,7 @@ class RewindManager
      *
      * @throws ModelNotRewindableException
      * @throws VersionDoesNotExistException
+     * @throws CurrentVersionColumnMissingException
      */
     public function goTo($model, int $targetVersion): void
     {
@@ -194,8 +197,9 @@ class RewindManager
 
         $model->disableRewindEvents();
 
-        $model->current_version = $version;
-        $model->save();
+        $model->forceFill([
+            'current_version' => $version,
+        ])->save();
 
         $model->enableRewindEvents();
     }
@@ -221,11 +225,16 @@ class RewindManager
      * Ensure the model uses the Rewindable trait.
      *
      * @throws ModelNotRewindableException
+     * @throws CurrentVersionColumnMissingException
      */
     protected function assertRewindable($model): void
     {
         if (collect(class_uses_recursive($model::class))->doesntContain(Rewindable::class)) {
-            throw new ModelNotRewindableException('Model must use the Rewindable trait to be rewound.');
+            throw new ModelNotRewindableException(sprintf('%s must use the Rewindable trait in order to access Rewind functionality.', $model::class));
+        }
+
+        if (! $this->modelHasCurrentVersionColumn($model)) {
+            throw new CurrentVersionColumnMissingException($model);
         }
     }
 
@@ -239,7 +248,21 @@ class RewindManager
      */
     protected function modelHasCurrentVersionColumn($model): bool
     {
-        return Schema::connection($model->getConnectionName())
+        // First, check the cache to avoid unnecessary queries
+        $cacheKey = sprintf('rewind:tables:%s:has_current_version', $model->getTable());
+        if (Cache::has($cacheKey)) {
+            // We only store true values in the cache, so just return true if the key exists.
+            return true;
+        }
+
+        $result = Schema::connection($model->getConnectionName())
             ->hasColumn($model->getTable(), 'current_version');
+
+        // If true, cache the result for a month We don't expect this to change.
+        if ($result) {
+            Cache::put($cacheKey, true, now()->addMonth());
+        }
+
+        return $result;
     }
 }
